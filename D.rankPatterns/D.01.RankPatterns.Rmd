@@ -11,6 +11,7 @@ output:
 
 Describe how the forest stand ranks are distributed across forest stands, and in relation to other forest attributes (BecZone, SpeciesGroup, Age, Height). Many similiar figures representing the same information are shown - depending on the specific question, one figure may be better than another for conveying the information. 
 
+This is a test: I've just changed a script in my repos.
 
 ``` {r setup, echo=F, message=F, warning=F}
 require(knitr)
