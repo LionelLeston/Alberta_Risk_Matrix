@@ -5,6 +5,8 @@ output:
   word_document:
     reference_docx: ../RmdStyles/ReportFormat_1.docx
   html_document: default
+editor_options: 
+  chunk_output_type: console
 ---
 
 **Objective: Summarize how stand ranks vary across forest attributes**
