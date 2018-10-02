@@ -75,7 +75,7 @@ Count + offset ~ Stand rank
 
 Previous cleaned in file E.01.DensityPatterns
 ``` {r}
-load(paste0(path, "RDataFiles/totalBirds_clean.RData"))
+load(paste0(path, "RDataFiles/AlbertatotalBirds_clean.RData"))
 ```
 
 ## Step 2. GLM of Density ~ Rank (rank is continuous)
@@ -118,7 +118,12 @@ plot(newdat2$FinalRank, newdat2$PredDens, type="l")
 ``` {r}
 # get "observed" densities per ForID - calculated in file E.01.DensityPatterns.Rmd
 
-load(paste0(path, "RDataFiles/totalBirds_withpreds.RData"))
+load(paste0(path, "RDataFiles/AlbertatotalBirds_withpreds.RData"))
+
+dens_per_ForID$FinalRank[dens_per_ForID$FinalRank=="999"]<-"NA"
+dens_per_ForID<-dens_per_ForID[!is.na(dens_per_ForID$FinalRank),]
+dens_per_ForID$FinalRank<-as.numeric(dens_per_ForID$FinalRank)
+dens_per_ForID<-dens_per_ForID[!dens_per_ForID$FinalRank==0,]
 
 ggplot(dens_per_ForID, aes(x=as.factor(FinalRank), y=PredDens_ForID)) + geom_violin(aes(fill=as.factor(FinalRank), group=as.factor(FinalRank))) + myfacettheme2 + guides(fill=FALSE) + scale_fill_manual(values=palrank) + geom_line(data=newdat2, aes(x=FinalRank, y=PredDens), size=3) + xlab("Rank") + ylab("Bird Density")
 
@@ -202,7 +207,7 @@ ggplot(sumresults, aes(x=SpeciesGroup, y=Rankvs.Density)) + geom_point() + geom_
 ```
 
 
-**Conclusion:** performance of rank for density dpeends on combination of bec and sp group.
+**Conclusion:** performance of rank for density depends on combination of bec and sp group.
 
 ``` {r, eval=F}
 reps <- read.csv("data/Output/BirdSamplingStandTypes-cleaned.2017.04.04.csv", header=T)

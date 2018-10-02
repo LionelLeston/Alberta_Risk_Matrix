@@ -57,7 +57,8 @@ getwd()
 ```
 
 ``` {r}
-source("Rfunctions/UsefulFunctions.R")
+path<-"C:/Users/Lionel/Documents/MITACS ACCELERATE FELLOWSHIP/Incidental Take Risk Ranking Matrix for Westfraser/Git Repository/My Repos/BC_Risk_Matrix/"
+source(paste0(path,"Rfunctions/UsefulFunctions.R"))
 ```
 
 
@@ -88,7 +89,7 @@ Those stand types that were sampled by at least one bird point count survey.
 Contains all possible forest stand type combinations, based on factorial combination of all levels of all 4 attributes. The combination of forest attributes is the unique ForID for a stand type.
 
 ```{r load.matrixTemplate, echo=T, eval=T}
-load("RDataFiles/mastermatrix.RData")
+load(paste0(path,"RDataFiles/mastermatrix.RData"))
 mastermatrix$ForID.qs <- mastermatrix$ForID
 mastermatrix$ForID <- as.character(mastermatrix$ForID)
 kable(head(mastermatrix, 10), row.names = F)
@@ -100,7 +101,7 @@ matrix.qs <- mastermatrix
 Contains stand ranks assigned to ForID. Note that ranks were previously quality-checked. These are the final ranks. 
 
 ``` {r}
-ranks <- read.csv("rawData/ForID_Ranks_final_long.csv", head=T)
+ranks <- read.csv(paste0(path,"rawData/ForID_Ranks_final_long.csv"), head=T)
 ranks$ForID.qs <- ranks$ForID
 ranks$ForID <- as.character(ranks$ForID)
 ranks.qs <- ranks
@@ -129,7 +130,7 @@ Bird data from BAM avian dataset available for sampled forest stands:
 
 
 ```{r load.pointcountloc.data, echo=T, eval=T}
-load("RDataFiles/TOTAlcount.per.PKEY.withForID.RData")
+load(paste0(path,"RDataFiles/TOTAlcount.per.PKEY.withForID.RData"))
 colnames(TOTAlcount.per.PKEY.withForID)
 nrow(TOTAlcount.per.PKEY.withForID)
 length(unique(TOTAlcount.per.PKEY.withForID$PKEY))
@@ -159,7 +160,7 @@ Offsets developed using QPAD approach, for "total species". Corrects for survey 
 
 
 ``` {r}
-load("RDataFiles/TOTA_offsets-v3_2016-12-01.RData")
+load(paste0(path,"RDataFiles/TOTA_offsets-v3_2016-12-01.RData"))
 qs.off <- OFF
 
 kable(head(OFF, 10))
@@ -175,7 +176,7 @@ kable(head(OFF, 10), row.names=F)
 These summaries of average rank across various combinations of forest attribute were generated in D.01.RankPatterns.Rmd
 
 ``` {r}
-load("RDataFiles/summarizedRanks.RData")
+load(paste0(path,"RDataFiles/summarizedRanks.RData"))
 ```
 
 ## Step 2. Combine datasets and switch column classes as necessary
@@ -230,7 +231,7 @@ There are `r length(unique(totalBirds$ForID))` sampled forest stand types going 
 #### Save pre-cleaned dataset
 
 ``` {r}
-save(totalBirds, file="RDataFiles/totalBirds_clean.RData")
+save(totalBirds, file=paste0(path,"RDataFiles/totalBirds_clean.RData"))
 ```
 
 ## Step 3. Calculate mean density per ForID, rather than count 
@@ -242,14 +243,14 @@ So here we're just calculating the mean bird density per ForID (forest stand typ
 Forest stand type is a factor with `r length(unique(totalBirds$ForID))` levels
 
 ``` {r}
-if ('fit.dens.forid_tot.RData' %in% dir("RDataFiles")) {
-  load("RDataFiles/fit.dens.forid_tot.RData") # loads the saved results if it's already run and saved
+if ('fit.dens.forid_tot.RData' %in% dir(paste0(path,"RDataFiles"))) {
+  load(paste0(path,"RDataFiles/fit.dens.forid_tot.RData")) # loads the saved results if it's already run and saved
 }
 
 
 if (exists("fit.dens.forid_tot")==FALSE) { #conditional statement; won't run if the file was already loaded from RData
   fit.dens.forid_tot <- glm(Count ~ ForID-1, family=poisson, data=totalBirds, offset=TOTA)  # run if not already run and saved
-  save(fit.dens.forid_tot, file="RDataFiles/fit.dens.forid_tot.RData") # save it so i don't need to run again. 
+  save(fit.dens.forid_tot, file=paste0(path,"RDataFiles/fit.dens.forid_tot.RData")) # save it so i don't need to run again. 
 }
 
 ```
@@ -290,7 +291,7 @@ totalBirds.all <- totalBirds
 totalBirds <- totalBirds[c("ForID", "BEC", "SpeciesGroup", "ForAge", "ForHt", "FinalRank", "PredDens_ForID")]
 totalBirds <- totalBirds[!duplicated(totalBirds),]
 dens_per_ForID <- totalBirds
-save(dens_per_ForID, file="RDataFiles/totalBirds_withpreds.RData")
+save(dens_per_ForID, file=paste0(path,"RDataFiles/totalBirds_withpreds.RData"))
 ```
 
 #### Density as a function of rank 

@@ -26,7 +26,8 @@ getwd()
 ```
 
 ``` {r}
-source("Rfunctions/UsefulFunctions.R")
+path<-"C:/Users/Lionel/Documents/MITACS ACCELERATE FELLOWSHIP/Incidental Take Risk Ranking Matrix for Westfraser/Git Repository/My Repos/BC_Risk_Matrix/"
+source(paste0(path,"Rfunctions/UsefulFunctions.R"))
 ```
 
 #### Dataset requirements
@@ -42,7 +43,7 @@ source("Rfunctions/UsefulFunctions.R")
 Contains all possible forest stand type combinations, based on factorial combination of all levels of all 4 attributes. The combination of forest attributes is the unique ForID for a stand type.
 
 ```{r load.matrixTemplate, echo=T, eval=T}
-load("RDataFiles/mastermatrix.RData")
+load(paste0(path,"RDataFiles/mastermatrix.RData"))
 kable(head(mastermatrix, 10), row.names = F)
 matrix.qs <- mastermatrix
 ```
@@ -52,7 +53,7 @@ matrix.qs <- mastermatrix
 Contains stand ranks assigned to ForID. Note that ranks were previously quality-checked. These are the final ranks. 
 
 ``` {r}
-ranks <- read.csv("rawData/ForID_Ranks_final_long.csv", head=T)
+ranks <- read.csv(paste0(path,"rawData/ForID_Ranks_final_long.csv"), head=T)
 ranks.qs <- ranks
 
 kable(t(table(ranks$FinalRank)))
@@ -72,7 +73,7 @@ kable(t(table(ranks$FinalRank)))
 Contains cumulative area of each forest stand type
 
 ``` {r}
-areas <- read.csv("rawData/ForIDAreaCalc-long-2018.01.csv", head=T)
+areas <- read.csv(paste0(path,"rawData/ForIDAreaCalc-long-2018.01.csv"), head=T)
 areas.qs <- areas
 
 kable(head(areas))
@@ -148,7 +149,7 @@ colnames(rank.ageheightsg) <- c("ForAge", "ForHt", "SpeciesGroup", "FinalRank")
 Combine aggregated tables into one list for easyloading in future
 ``` {r}
 rank.aggregates <- list(ageht=rank.ageheight, agehtbecrank=rank.ageheightbec, agehtsg=rank.ageheightsg)
-save(rank.aggregates, file="RDataFiles/summarizedRanks.RData")
+save(rank.aggregates, file=paste0(path,"RDataFiles/summarizedRanks.RData"))
 ```
 
 

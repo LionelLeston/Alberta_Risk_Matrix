@@ -115,7 +115,7 @@ myfacettheme5 <- theme_grey() +
 #---------------------------------  Colour Palettes  ----------------------------------
 
 # Rank
-palrank <- colorRampPalette(brewer.pal(9, "PuRd"))
+palrank <- colorRampPalette(brewer.pal(9, "PuRd"))#Nicole had 6 levels; causing errors in my scripts, until I reduce #rank classes to 6
 palrank <- palrank(8)[3:8]
 
 
@@ -131,6 +131,34 @@ palbec <- c("#ff0000", #BG_PP
             "#833c0c", #MS
             "#00b0f0", #SBS_SBPS
             "#548235")  #SWB
+
+#Subregion (in Alberta)
+palsub <- c("#ff0000", #red: Alpine-Subalpine
+            "#009999", #teal: Athabasca Plain ALPAC
+            "#9966ff", #violet: Boreal Subarctic
+            "#92d050", #leaf green: Central Mixedwood
+            "#ffff00", #yellow: Dry Mixedwood
+            "#833c0c", #brown: Lower Boreal Highlands
+            "#00b0f0", #sky blue: Lower Foothills
+            "#545454", #dark grey: Montane
+            "#CCFF00", #sicky sea green: Northern Mixedwood
+            "#33FF00", #nuclear green: Upper Boreal Highlands
+            "#548235")  #mossy green: Upper Foothills
+
+palsub2 <- c("#ff0000", #red: Alpine-Subalpine
+            "#009999", #teal: Athabasca Plain ALPAC
+            "#9966ff", #violet: Boreal Subarctic
+            "#92d050", #leaf green: Central Mixedwood
+            "#ffff00", #yellow: Dry Mixedwood
+            "#833c0c", #brown: Lower Boreal Highlands
+            "#00b0f0", #sky blue: Lower Foothills
+            "#00ff00",
+            "#545454", #dark grey: Montane
+            "#CCFF00", #sicky sea green: Northern Mixedwood
+            "#33FF00", #nuclear green: Upper Boreal Highlands
+            "#548235", #mossy green: Upper Foothills
+            "#0000ff")  
+
 
 # SpeciesGroup
 palsg <- c("#833c0c", #Act
@@ -155,6 +183,43 @@ palsg <- c("#833c0c", #Act
            "#ffc000", #SwB
            "#ffe699") #SwB_Decid
 
+#Stand Type
+palstand <- c("#833c0c", #dark brown: Mixedwood-conifer
+           "#b89268", #taupe: Mixedwood-decid
+           "#00b050", #dark green: Mixedwood-decid/Pl
+           "#a9d08e", #lichen green: Mixedwood-decid/Sb
+           "#eab144", #yellow-ochre: Mixedwood-decid/Sw
+           "#4997a7", #dark slaty blue: Mixedwood-Pl
+           "#a9c9cf", #light slaty blue: Mixedwood-Sb
+           "#00b0f0", #sky blue: Mixedwood-Sw
+           "#3fcdff", #eggshell blue: PureBlackSpruce
+           "#6302ce", #dark blue: PureConifer-Allcon
+           "#9966ff", #royal blue: PureConifer-Pl
+           "#7030a0", #periwinkle: PureConifer-Sx
+           "#d60093", #Imperial purple: magenta: PureHardwood
+           "#ff33cc", #puce: PurePine
+           "#ff0000", #red: PureWhiteSpruce
+           "#ed7d31", #NA
+           "#bf8f00") #?
+
+palstand2 <- c("#833c0c", #dark brown: Mixedwood-conifer
+              "#b89268", #taupe: Mixedwood-decid
+              "#00b050", #dark green: Mixedwood-decid/Pl
+              "#a9d08e", #lichen green: Mixedwood-decid/Sb
+              "#eab144", #yellow-ochre: Mixedwood-decid/Sw
+              "#4997a7", #dark slaty blue: Mixedwood-Pl
+              "#a9c9cf", #light slaty blue: Mixedwood-Sb
+              "#00b0f0", #sky blue: Mixedwood-Sw
+              "#3fcdff", #eggshell blue: PureBlackSpruce
+              "#6302ce", #dark blue: PureConifer-Allcon
+              "#9966ff", #royal blue: PureConifer-Pl
+              "#7030a0", #periwinkle: PureConifer-Sx
+              "#d60093", #Imperial purple: magenta: PureHardwood
+              "#ff33cc", #puce: PurePine
+              "#ff0000", #red: PureWhiteSpruce
+              "#ed7d31", #NA
+              "#bf8f00",
+              "#FFFFFF") #?
 #Age              
 palage <- c("#e1f7e6", #3-30
             "#9fe1af", #31-80
@@ -167,6 +232,15 @@ palht <- c("#feffb3", #1
            "#f7f37a", #2
            "#f8e43b", #3
            "#f9c617") #4      
+
+#Timber Productivity Rating                  
+paltpr <- c("#ff0000","#ffff00","#0000ff","#00ff00")
+
+paltpr2 <- c("#ffff00", #1
+            "#00ff00", #2
+            "#0000ff", #3
+            "#ff0000", #4
+            "#ffffff") #5
 
 
 
