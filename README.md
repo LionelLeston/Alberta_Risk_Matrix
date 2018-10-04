@@ -57,13 +57,21 @@ If you want to apply these scripts to another dataset, you'll need to understand
 
 Nicole's workflow breaks down into the following major steps. 
 
+
 A. Data quality checking
+
 B. Data manipulation & description
+
 C. Sampling gap analysis
+
 D. Description of rank patterns with forest attributes
+
 E. Description of bird density patterns
+
 F. Evaluation of predictive ability of ranking matrix
+
 G. Bird-habitat density model (BRT)
+
 H. Matrix derivation
 
 
