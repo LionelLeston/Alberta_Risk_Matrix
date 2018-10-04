@@ -1,6 +1,6 @@
-# Mig Birds Matrix / BC VRI models
+# Mig Birds Matrix / Alberta AVI models
 
-Welcome to Nicole's BC models built in collaboration with Canfor and West Fraser!
+Welcome to Lionel Leston and Nicole Barker's Alberta models built in collaboration with the Alberta Forest Products Association. 
 
 This series of scripts is intended to help anyone replicate Nicole's analyses if they have: 
 1. A Risk Matrix
