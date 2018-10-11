@@ -125,7 +125,7 @@ Number of ForestID combinations that are in the risk matrix: `r length(unique(Al
 Contains stand ranks assigned to ForestID. Note that ranks were previously quality-checked. These are the final ranks. 
 
 ``` {r}
-ranks <- read.csv(paste0(path,"rawData/AlbertaForID_Ranks_final_long.csv"), head=T)
+ranks <- read.csv("rawData/AlbertaForID_Ranks_final_long.csv", head=T)
 ranks.qs <- ranks#quick-saves "ranks"
 
 kable(t(table(ranks$Rating)))
@@ -265,7 +265,7 @@ colnames(rank.age.tpr.stand) <- c("ageclass", "tpr.name", "standtype.name", "Fin
 Combine aggregated tables into one list for easyloading in future
 ``` {r}
 rank.aggregates <- list(agetpr=rank.age.tpr, agetprsub=rank.age.tpr.subregion, agetprstand=rank.age.tpr.stand)
-save(rank.aggregates, file=paste0(path,"RDataFiles/AlbertasummarizedRanks.RData"))
+save(rank.aggregates, file="RDataFiles/AlbertasummarizedRanks.RData")
 ```
 
 
