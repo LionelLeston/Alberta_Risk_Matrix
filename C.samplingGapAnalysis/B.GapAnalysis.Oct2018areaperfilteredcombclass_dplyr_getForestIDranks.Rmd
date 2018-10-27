@@ -1,5 +1,5 @@
 ---
-title: "C.GapAnalysis.CreateAlbertaMasterMatrixAndRanksMatrix"
+title: "B.GapAnalysis.CreateAlbertaMasterMatrixAndRanksMatrix"
 author: "Lionel Leston"
 date: "October 6, 2018"
 output: word_document
@@ -39,7 +39,7 @@ than it was in the point counts.
 ## Step 1. Load data into R
 The risk matrix AVI attribute table has to be exported as a series of CSV files because it is too large (6120960 rows) for a single CSV file (limit ~1 million rows) to contain all of the attribute table. I will then combine several separate CSV files after reading them into R, using rbind(). Before combining the separate read-in files with rbind(), I made sure that the columns and column names in each .csv file were identical. I also made sure that there were no duplicate observations (i.e.unique=nrow) and that the total number of observations after rbinding the CSV files was 6120960 observations.
 
-```{r load}
+```{r load, echo=FALSE}
 riskmatrixAVI1<-read.csv("C.samplingGapAnalysis/GISfiles/May17RiskMatrixV3_SubrCM_AlpacAVI.600Kplus.csv", header=TRUE)
 
 riskmatrixAVI2<-read.csv("C.samplingGapAnalysis/GISfiles/May17RiskMatrixV3_SubrCM_AlpacAVI.below600K.csv", header=TRUE)
@@ -83,7 +83,7 @@ riskmatrixAVI.A<-rbind(riskmatrixAVI1, riskmatrixAVI2, riskmatrixAVI3,
                        riskmatrixAVI16, riskmatrixAVI17)
 ```
 
-Each data frame above contains the same number of unique observations as rows, indicating no duplicate observations, for example `r unique(riskmatrixAVI1)` unique observations and `r nrow(riskmatrixAVI1)` rows in riskmatrixAVI1.
+Each data frame above contains the same number of unique observations as rows, indicating no duplicate observations, for example `r nrow(unique(riskmatrixAVI1))` unique observations and `r nrow(riskmatrixAVI1)` rows in riskmatrixAVI1.
 
 Each data frame above includes the same variables, before they are bound together in single frame, for example `r names(riskmatrixAVI1)`
 
@@ -93,7 +93,7 @@ There are `r nrow(riskmatrixAVI.A)` observations in the data frame after combini
 
 In the risk matrix for Alberta, foresters assign forest stands to age classes that are meaningful for foresters, but are probably meaningful for breeding birds as well.
 
-```{r get-age-classes}
+```{r get-age-classes, echo=FALSE}
 riskmatrixAVI.A$AGE_2017<-as.numeric(riskmatrixAVI.A$AGE_2017)
 riskmatrixAVI.A$Shape_Area<-as.numeric(riskmatrixAVI.A$Shape_Area)
 str(riskmatrixAVI.A)
@@ -113,7 +113,7 @@ We will use the *dplyr* package in R to summarize total area for each potential 
 
 We first create a list of ranks for each ForestID. ForestID is created by concatenating the subregion name, stand name, age class, and timber productivity rating. Note that some polygons assigned to the same ForestID may be assigned different ranks with some ranked from 1 to 6 and others ranked as 0, NA, or 999.
 
-```{r summarize-area-and-create-ranks-list}
+```{r summarize-area-and-create-ranks-list, echo=FALSE}
 library(dplyr)
 riskmatrixAVI.A$subregion.name<-riskmatrixAVI.A$NaturalSub
 riskmatrixAVI.A$standtype.name<-riskmatrixAVI.A$StandType
@@ -132,7 +132,7 @@ write.csv(AlbertaForID_Ranks_final_long, file="rawData/AlbertaForID_Ranks_final_
 
 In the next part, we use the *dplyr* package to summarize the cumulative area of each ForestID separately from ranks, get the point count data, and calculate the number of point counts within a particular ForestID, along with relative sampling effort per ForestID. This is our *gap analysis*.
 
-```{r summarize-area-and-create-gap-analysis}
+```{r summarize-area-and-create-gap-analysis, echo=FALSE}
 totalpers.s.3.30.Good<-riskmatrixAVI.A%>%
   group_by(subregion.name,standtype.name)%>%
   filter(tpr.name=="G", ageclass=="Age 3-30 Y")%>%
@@ -292,7 +292,7 @@ I manually converted it to long format in *areabyForestID* prior to adding bird 
 
 Now add the bird data.
 
-```{r add-bird-data}
+```{r add-bird-data, echo=FALSE}
 #Recast by ForestID
 pointcountsformatrix<-read.csv("C.samplingGapAnalysis/pointsCdatacheckMay23.csv", header=TRUE)
 pointcountsformatrix$ForestID<-paste0(pointcountsformatrix$subregion.name,".",pointcountsformatrix$standtype.name,".",pointcountsformatrix$ageclass,".",pointcountsformatrix$tpr.name)
@@ -328,18 +328,8 @@ The file that was used to create the gap analysis report and which was linked to
 
 The mastermatrix will be saved to an RData file and cleaned up prior to using it to analyze patterns in the ranks per ForestID and densities of birds per ForestID
 
-```{r create-Alberta-mastermatrix}
+```{r create-Alberta-mastermatrix, echo=FALSE}
 write.csv(AlbertaMastermatrix, file="RDataFiles/AlbertaMastermatrix.csv")
 save(AlbertaMastermatrix, file="RDataFiles/AlbertaMastermatrix.RData")
 ```
 
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
