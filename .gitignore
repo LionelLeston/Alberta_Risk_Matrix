@@ -27,3 +27,37 @@ E\.birdDensityPatterns/figures/
 
 
 *.csv
+
+B\.samplingGapAnalysis/GISfiles/
+
+B\.samplingGapAnalysis/merged1\.xlsx
+
+*.png
+
+B\.samplingGapAnalysis/GapAnalysisJuly23\.mxd
+
+*.tif
+
+*.jpg
+
+*.cpg
+
+*.dbf
+
+*.prj
+
+*.sbn
+
+*.sbx
+
+*.shp
+
+*.shx
+
+B\.samplingGapAnalysis/ZeroSurveyEffortSummedbyFMA\.pptx
+
+B\.samplingGapAnalysis/schema\.ini
+
+C\.samplingGapAnalysis/GISfiles/
+
+C\.samplingGapAnalysis/GapAnalysisJuly23\.mxd
