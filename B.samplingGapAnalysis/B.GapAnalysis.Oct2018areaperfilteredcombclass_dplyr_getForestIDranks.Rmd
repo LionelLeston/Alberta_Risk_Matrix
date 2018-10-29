@@ -23,7 +23,14 @@ source("Rfunctions/UsefulFunctions.R")
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>. When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. 
 
-This particular R Markdown document describes a gap analysis of how well point counts collated by the Boreal Avian Modelling Project (BAM) in Alberta are represented within different combinations of Natural Subregion, Stand Type, Age Class, and Timber Productivity Rating outlined in the risk matrix (v. 3) of incidental take by forestry operations, created by FORSITE for FRIAA (the Forestry Resource Inventory Association of Alberta). 
+## Objective: 
+This report describes a gap analysis of how well point counts collated by the Boreal Avian Modelling Project (BAM) in Alberta cover the different Forest Classes identified in the Nest Ranking Matrix, aka "Risk Matrix". 
+
+These Matrix Forest Classes are defined as the full factorial combination of Natural Subregion, Stand Type, Age Class, and Timber Productivity Rating. The Risk matrix was created by forest companies in Alberta, and ranks were assigned to Forest Classes by STRIX Ecological Consulting. 
+
+Hereafter, ForestID is used as code for "Matrix Forest Class"
+
+## Gap Analysis History
 
 The first version of the gap analysis in May described the number of point counts occurring in each ForestID combination of subregion, stand type, age class, and timber productivity, the cumulative area of each ForestID combination, and relative sampling effort (points/10000 hectares) in each ForestID combination. Relative sampling effort enabled us to identify ForestID's, and combinations of subregion, stand type, age class, and/or timber productivity rating that have few or no point counts, thus could benefit the BAM database by contributing future point count samples.  
 
@@ -35,6 +42,8 @@ The first part of creating the risk matrix is done in ArcGIS. For some reason, I
 1. Calculate age of stand during survey using age2017 - (2017-YEAR). Some values will be negative
 because stand age assessed in 2017 is calculated differently (just based on age2017)
 than it was in the point counts.
+
+# LIONEL: Move Step 1 (Load data and rbind) to the data processing script
 
 ## Step 1. Load data into R
 The risk matrix AVI attribute table has to be exported as a series of CSV files because it is too large (6120960 rows) for a single CSV file (limit ~1 million rows) to contain all of the attribute table. I will then combine several separate CSV files after reading them into R, using rbind(). Before combining the separate read-in files with rbind(), I made sure that the columns and column names in each .csv file were identical. I also made sure that there were no duplicate observations (i.e.unique=nrow) and that the total number of observations after rbinding the CSV files was 6120960 observations.
@@ -90,8 +99,11 @@ Each data frame above includes the same variables, before they are bound togethe
 There are `r nrow(riskmatrixAVI.A)` observations in the data frame after combining all CSV files, so the entire risk matrix AVI attribute table has been loaded into R.
 
 ## Step 2. Create age classes in R based on age since stand origin
+# Step 2 also belongs in the data processing scripts. 
 
 In the risk matrix for Alberta, foresters assign forest stands to age classes that are meaningful for foresters, but are probably meaningful for breeding birds as well.
+
+# Add more explanation here: why do we need to create age classes? Weren't age classes provided in the Forsite spatial file? 
 
 ```{r get-age-classes, echo=FALSE}
 riskmatrixAVI.A$AGE_2017<-as.numeric(riskmatrixAVI.A$AGE_2017)
@@ -106,6 +118,10 @@ riskmatrixAVI.A$ageclass<-{ifelse(riskmatrixAVI.A$AGE_2017==9999,"NA",
                                       ifelse(riskmatrixAVI.A$AGE_2017 <141,"Age 101-140 Y","Age 141+")))))))
 }
 ```
+
+
+# insert a step here to add in the columns with abbreviated factor levels. And generate the ForID and ForID_long
+
 
 ## Step 3. Summarize cumulative area, ranks, and relative sampling effort to date within each combination of subregion, stand type, age class, and timber productivity rating
 
@@ -131,6 +147,9 @@ write.csv(AlbertaForID_Ranks_final_long, file="rawData/AlbertaForID_Ranks_final_
 ```
 
 In the next part, we use the *dplyr* package to summarize the cumulative area of each ForestID separately from ranks, get the point count data, and calculate the number of point counts within a particular ForestID, along with relative sampling effort per ForestID. This is our *gap analysis*.
+
+# For this step in my analysis, I calculated forest area and sampling effort for each ForID. 
+
 
 ```{r summarize-area-and-create-gap-analysis, echo=FALSE}
 totalpers.s.3.30.Good<-riskmatrixAVI.A%>%
