@@ -61,3 +61,5 @@ B\.samplingGapAnalysis/schema\.ini
 C\.samplingGapAnalysis/GISfiles/
 
 C\.samplingGapAnalysis/GapAnalysisJuly23\.mxd
+
+*.xml

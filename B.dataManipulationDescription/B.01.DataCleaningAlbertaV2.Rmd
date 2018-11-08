@@ -1,0 +1,173 @@
+---
+title: 'Data Cleaning: Formatting the ranking list and risk matrix''s variables'
+author: "Lionel Leston and Nicole Barker"
+output:
+  word_document:
+    reference_docx: ../RmdStyles/ReportFormat_1.docx
+  html_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+**Objective: Clean the data**
+
+Describe how the forest stand ranks are distributed across forest stands, and in relation to other forest attributes (Natural Subregion, Stand Type, Age, Timber Productivity Rating). Many similiar figures representing the same information are shown - depending on the specific question, one figure may be better than another for conveying the information. 
+
+
+``` {r setup, echo=F, message=F, warning=F}
+require(knitr)
+opts_knit$set(root.dir = '..')
+knitr::opts_chunk$set(
+  fig.path = "figures/"
+)
+rm(list=ls())
+getwd()
+```
+
+``` {r}
+#path<-"C:/Users/Lionel/Documents/MITACS ACCELERATE FELLOWSHIP/Incidental Take Risk Ranking Matrix for Westfraser/Git Repository/My Repos/BC_Risk_Matrix/"
+#source(paste0(path,"Rfunctions/UsefulFunctions.R"))
+source("Rfunctions/UsefulFunctions.R")
+```
+
+#### Dataset requirements
+
+1. mastermatrix
+2. stand type ranks
+3. stand type areas
+
+## Step 1. Load data
+
+####1. Create abbreviated names for variable values in AlbertaMastermatrix
+
+Contains all possible forest stand type combinations, based on factorial combination of all levels of all 4 attributes. The combination of forest attributes is the unique ForestID for a stand type.
+
+The master matrix is a data frame summarizing the cumulative area and number of Alberta point counts located within a given combination of Natural Subregion, stand type, age class, and timber productivity rating. Each potential combination is described by a unique ForestID name. This master matrix is a product of a gap analysis conducted from May-July, 2018 to describe the point count coverage in different combinations of the above variables. A description of this gap analysis is available. These variables were chosen because they are used by foresters to select stands for harvest, and potentially indicate the number of birds that nest within each stand and hence are potentially vulnerable to incidental take during harvest.
+
+Category names for subregion, stand type, age class, and timber productivity need abbreviated forms for graphing. Category names also need to have their order specified.
+
+```{r load.matrixTemplate, echo=T, eval=T}
+#load(paste0(path,"RDataFiles/AlbertaMastermatrix.RData"))
+load("RDataFiles/AlbertaMastermatrix.RData")
+kable(head(AlbertaMastermatrix, 10), row.names = F)
+
+#Use lookup tables to add abbreviated variable categories to mastermatrix
+LOOKUP.Subregion<-read.csv("rawData/LOOKUP.Subregion.csv", header=TRUE)
+#add abbreviated subregion names
+AlbertaMastermatrix<-merge(AlbertaMastermatrix, LOOKUP.Subregion, by=c("subregion.name"), all.x=T)
+LOOKUP.StandType<-read.csv("rawData/LOOKUP.StandType.csv", header=TRUE)
+#add abbreviated stand type and coarse forest type names
+AlbertaMastermatrix<-merge(AlbertaMastermatrix, LOOKUP.StandType, by=c("standtype.name"), all.x=T)
+#add abbreviated age class names
+LOOKUP.ForestAge<-read.csv("rawData/LOOKUP.ForestAge.csv", header=TRUE)
+AlbertaMastermatrix<-merge(AlbertaMastermatrix, LOOKUP.ForestAge, by=c("ageclass"), all.x=T)
+#add alternate name for ForestID
+AlbertaMastermatrix$matrix.forest.class<-AlbertaMastermatrix$ForestID
+
+matrix.qs <- AlbertaMastermatrix#quicksaves AlbertaMastermatrix up to this point
+
+write.csv(AlbertaMastermatrix, file="RDataFiles/AlbertaMastermatrix.csv")
+save(AlbertaMastermatrix, file="RDataFiles/AlbertaMastermatrix.Rdata")
+```
+
+####2. summary of master matrix
+
+Number of subregions: `r length(unique(AlbertaMastermatrix$subregion.name))`
+
+Number of stand types: `r length(unique(AlbertaMastermatrix$standtype.name))`
+
+Number of age classes: `r length(unique(AlbertaMastermatrix$ageclass))`
+
+Number of timber productivity classes: `r length(unique(AlbertaMastermatrix$tpr.name))`
+
+Number of ForestID combinations that are in the risk matrix: `r length(unique(AlbertaMastermatrix$ForestID))`
+
+####3. Load "ranks" file, then reformat ForestID column in "ranks" to match ForestID column in AlbertaMastermatrix and get rid of unranked stands
+
+Contains stand ranks assigned to ForestID. Note that ranks were previously quality-checked. These are the final ranks. 
+
+``` {r}
+ranks <- read.csv("rawData/AlbertaForID_Ranks_final_long.csv", head=T)
+ranks.qs <- ranks#quick-saves "ranks"
+
+kable(t(table(ranks$Rating)))
+```
+
+
+``` {r}
+ranks$Rating[ranks$Rating==999]<-"Unranked"
+ranks$Rating[ranks$Rating==0]<-"Unranked"
+ranks<-ranks[!is.na(ranks$Rating),]
+ranks$FinalRank <-as.numeric(ranks$Rating) 
+write.csv(ranks, file="ReducedAlbertaForID_Ranks_final_long.csv")
+kable(head(ranks, 10))
+kable(t(table(ranks$FinalRank)))
+```
+
+The ForestID column in "ranks" needs to be formatted to match up with the ForestID column in "AlbertaMastermatrix".
+
+``` {r}
+#ranks$ForestID<-gsub("DryMixedwood", "Dry Mixedwood", ranks$ForestID)
+#ranks$ForestID<-gsub("AthabascaPlainALPAC", "Athabasca Plain ALPAC", ranks$ForestID)
+#ranks$ForestID<-gsub("BorealSubarctic", "Boreal Subarctic", ranks$ForestID)
+#ranks$ForestID<-gsub("CentralMixedwood", "Central Mixedwood", ranks$ForestID)
+#ranks$ForestID<-gsub("LowerBorealHighlands", "Lower Boreal Highlands", ranks$ForestID)
+#ranks$ForestID<-gsub("LowerFoothills", "Lower Foothills", ranks$ForestID)
+#ranks$ForestID<-gsub("NorthernMixedwood", "Northern Mixedwood", ranks$ForestID)
+#ranks$ForestID<-gsub("UpperBorealHighlands", "Upper Boreal Highlands", ranks$ForestID)
+#ranks$ForestID<-gsub("UpperFoothills", "Upper Foothills", ranks$ForestID)
+#ranks$ForestID<-gsub("_", "-", ranks$ForestID)
+#ranks$ForestID<-gsub("pure", "Pure", ranks$ForestID)
+#ranks$ForestID<-gsub("allcon", "Allcon", ranks$ForestID)
+
+ranks$ForestID<-gsub("\\Y.G","Y.Good", ranks$ForestID)
+ranks$ForestID<-gsub("\\Y.M","Y.Medium", ranks$ForestID)
+ranks$ForestID<-gsub("\\Y.F","Y.Fair", ranks$ForestID)
+ranks$ForestID<-gsub("\\Y.U","Y.Unproductive", ranks$ForestID)
+
+ranks$ForestID<-gsub("\\NA.G","NA.Good", ranks$ForestID)
+ranks$ForestID<-gsub("\\NA.M","NA.Medium", ranks$ForestID)
+ranks$ForestID<-gsub("\\NA.F","NA.Fair", ranks$ForestID)
+ranks$ForestID<-gsub("\\NA.U","NA.Unproductive", ranks$ForestID)
+
+ranks$ForestID<-gsub("\\+.G","+.Good", ranks$ForestID)
+ranks$ForestID<-gsub("\\+.M","+.Medium", ranks$ForestID)
+ranks$ForestID<-gsub("\\+.F","+.Fair", ranks$ForestID)
+ranks$ForestID<-gsub("\\+.U","+.Unproductive", ranks$ForestID)
+
+#ranks$ForestID<-gsub("\\NA.","Unidentified.", ranks$ForestID)
+#ranks$ForestID<-gsub("\\.0.",".Unidentified.", ranks$ForestID)
+write.csv(ranks, file="rawData/AlbertaForID_Ranks_final_long.csv")
+
+```
+
+####4. Load point count data and reformat ForestID to match AlbertaMastermatrix
+
+```{r merge.pointcountloc.data, echo=T, eval=T}
+countdata<-read.csv("RDataFiles/AlbertaPointCountsAndOffsetsfromhabitatcategoriesAug16.csv",header=T)#counts of individual species, offsets for individual species, habitat, footprint data per PKEY and SS (as of Aug.16, 2018)
+extractedtocount<-read.csv("RDataFiles/AlbertapointsCdatacheckMay23.csv",header=T)#ForestID data extracted to SS back in May 2018
+extractedtocount<-extractedtocount[,c("SS","ForestID")]#minimize variables from "extractedtocount" that we merge with "countdata"
+merged2gether<-merge(countdata, extractedtocount, by=c("SS"), all=T)
+write.csv(merged2gether, file="RDataFiles/merged2gether.csv")#data check
+
+#now reformat ForestID to match formatting in AlbertaMastermatrix
+#For some reason, this next section is no longer necessary? Not sure it ever was.
+#merged2gether$ForestID<-gsub("DryMixedwood", "Dry Mixedwood", merged2gether$ForestID)
+#merged2gether$ForestID<-gsub("AthabascaPlainALPAC", "Athabasca Plain ALPAC", merged2gether$ForestID)
+#merged2gether$ForestID<-gsub("BorealSubarctic", "Boreal Subarctic", merged2gether$ForestID)
+#merged2gether$ForestID<-gsub("CentralMixedwood", "Central Mixedwood", merged2gether$ForestID)
+#merged2gether$ForestID<-gsub("LowerBorealHighlands", "Lower Boreal Highlands", merged2gether$ForestID)
+#merged2gether$ForestID<-gsub("LowerFoothills", "Lower Foothills", merged2gether$ForestID)
+#merged2gether$ForestID<-gsub("NorthernMixedwood", "Northern Mixedwood", merged2gether$ForestID)
+#merged2gether$ForestID<-gsub("UpperBorealHighlands", "Upper Boreal Highlands", merged2gether$ForestID)
+#merged2gether$ForestID<-gsub("UpperFoothills", "Upper Foothills", merged2gether$ForestID)
+#merged2gether$ForestID<-gsub("\\.0.", ".Unidentified.", merged2gether$ForestID)
+#merged2gether$ForestID<-gsub("_", "-", merged2gether$ForestID)
+#merged2gether$ForestID<-gsub("pure", "Pure", merged2gether$ForestID)
+#merged2gether$ForestID<-gsub("allcon", "Allcon", merged2gether$ForestID)
+#after transforming ".0." to ".Unidentified." and "pure" to "Pure"
+#merged2gether$ForestID<-gsub("0.Pure", "Unidentified.Pure", merged2gether$ForestID, fixed=T)
+#merged2gether$ForestID<-gsub("0.Mixed", "Unidentified.Mixed", merged2gether$ForestID, fixed=T)
+save(merged2gether, file="RDataFiles/AlbertaCounts.RData")
+
+```
