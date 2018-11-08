@@ -29,90 +29,157 @@ The GIS data will be used to make the master matrix that is combined with point 
 
 The most recent version of this analysis was run in September, and includes the creation of an AlbertaMastermatrix containing observations of cumulative area, subregion, stand, age-class, and timber productivity rating for each ForestID, and a separate list of risk matrix ranks for each ForestID. 
 
-The first part of creating the risk matrix is done in ArcGIS. For some reason, I can't easily combine MOD1YR or ORIGINYR from the detailed AVI geodatabase, so the age-structure calculated here is as of 2017. Probably not an issue, just that the age structure as of 2017 is different from what would have been present when surveys were actually being done.
+#### Temporal alignment
 
+For some reason, I can't easily combine MOD1YR or ORIGINYR from the detailed AVI geodatabase, so the age-structure calculated here is as of 2017. Probably not an issue, just that the age structure as of 2017 is different from what would have been present when surveys were actually being done.
+
+## Background work done before it came to U of A
+
+* Creation of matrix and ranks of matrix stand classes identified in that matrix
+* Translation of that matrix into a spatial file 
+
+## Background work done by U of A folks before switching over to R
+
+The first part of creating the risk matrix is done in ArcGIS. 
+
+We received two geodatabases from Forsite
+
+#### 1. mbca_avi.gdb
+
+``` {r}
+mbca_avi <- read.csv("rawData/AVI_1rowexport.csv", header=T)
+```
+
+Has 1 layer, AVI, that contains `r length(colnames(mbca_avi))` rows: `r colnames(mbca_avi)`.
+Does not contain information about the derived matrix ranks. 
+Attribute table has 3,118,203 rows.
+
+#### 2. **avi_analysis.gdb** : 
+
+Please note there is a data sharing agreement associated with these geodatabases. They cannot be used for anything other than the matrix work, and they cannot be shared with other parties. 
+
+We exported the risk matrix AVI to a series of csv files. 
 
 ## Step 1. Load data into R
 The risk matrix AVI attribute table has to be exported as a series of CSV files because it is too large (6120960 rows) for a single CSV file (limit ~1 million rows) to contain all of the attribute table. I will then combine several separate CSV files after reading them into R, using rbind(). Before combining the separate read-in files with rbind(), I made sure that the columns and column names in each .csv file were identical. I also made sure that there were no duplicate observations (i.e.unique=nrow) and that the total number of observations after rbinding the CSV files was 6120960 observations.
 
 ```{r load, echo=FALSE}
-riskmatrixAVI1<-read.csv("rawData/GISfiles/May17RiskMatrixV3_SubrCM_AlpacAVI.600Kplus.csv", header=TRUE)
+riskmatrixAVI1<-read.csv("rawData/GISfiles/May17RiskMatrixV3_SubrCM_AlpacAVI.600Kplus.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI2<-read.csv("rawData/GISfiles/May17RiskMatrixV3_SubrCM_AlpacAVI.below600K.csv", header=TRUE)
+riskmatrixAVI2<-read.csv("rawData/GISfiles/May17RiskMatrixV3_SubrCM_AlpacAVI.below600K.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI3<-read.csv("rawData/GISfiles/May17RiskMatrixV3_SubrCM_noFMA.csv", header=TRUE)
+riskmatrixAVI3<-read.csv("rawData/GISfiles/May17RiskMatrixV3_SubrCM_noFMA.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI4<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregion0.csv", header=TRUE)
+riskmatrixAVI4<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregion0.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI5<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionABandM.csv", header=TRUE)
+riskmatrixAVI5<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionABandM.csv", header=TRUE, stringsAsFactors = F)
 
 riskmatrixAVI6<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_newANCtoMillar.csv", header=TRUE)
 
-riskmatrixAVI7<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_newTolkoHighPrairieAndFootner.csv", header=TRUE)
+riskmatrixAVI7<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_newTolkoHighPrairieAndFootner.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI8<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_TolkoVanderwell.csv", header=TRUE)
+riskmatrixAVI8<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_TolkoVanderwell.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI9<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_VanderwellContractorsFMA.csv", header=TRUE)
+riskmatrixAVI9<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_VanderwellContractorsFMA.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI10<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_WestFraserAndTolko.csv", header=TRUE)
+riskmatrixAVI10<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_WestFraserAndTolko.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI11<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_WestFraserSlaveLakeFMA.csv", header=TRUE)
+riskmatrixAVI11<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_WestFraserSlaveLakeFMA.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI12<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_WeyerhauserGrandePrairie.csv", header=TRUE)
+riskmatrixAVI12<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_WeyerhauserGrandePrairie.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI13<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_WeyerhauserPembinaTimberland.csv", header=TRUE)
+riskmatrixAVI13<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_WeyerhauserPembinaTimberland.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI14<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionLBHandDM.csv", header=TRUE)
+riskmatrixAVI14<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionLBHandDM.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI15<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionLFabove700K.csv", header=TRUE)
+riskmatrixAVI15<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionLFabove700K.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI16<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionLFbelow700K.csv", header=TRUE)
+riskmatrixAVI16<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionLFbelow700K.csv", header=TRUE, stringsAsFactors = F)
 
-riskmatrixAVI17<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionNandU.csv", header=TRUE)
+riskmatrixAVI17<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionNandU.csv", header=TRUE, stringsAsFactors = F)
+
+## create a list to hold all csvs. Makes repeat operations much more efficient, code-wise. 
+
+avi.list <- list(riskmatrixAVI1, riskmatrixAVI2, riskmatrixAVI3, 
+                 riskmatrixAVI4, riskmatrixAVI5, riskmatrixAVI6,
+                 riskmatrixAVI7, riskmatrixAVI8, riskmatrixAVI9,
+                 riskmatrixAVI10, riskmatrixAVI11, riskmatrixAVI12,
+                 riskmatrixAVI13, riskmatrixAVI14, riskmatrixAVI15,
+                 riskmatrixAVI16, riskmatrixAVI17)
+
+names(avi.list) <- c("riskmatrixAVI1", "riskmatrixAVI2", "riskmatrixAVI3", "riskmatrixAVI4", "riskmatrixAVI5", "riskmatrixAVI6", "riskmatrixAVI7", "riskmatrixAVI8", "riskmatrixAVI9", "riskmatrixAVI10", "riskmatrixAVI11", "riskmatrixAVI12", "riskmatrixAVI13", "riskmatrixAVI14", "riskmatrixAVI15", "riskmatrixAVI16", "riskmatrixAVI17")
+
 ```
-
-During some quality-checking, we discovered that Shape_Area and Shape_Length were reading as factors rather than numeric, which caused problems downstream. 
 
 #### check to make sure that Shape_Area is a numeric variable in these files. 
 
+During some quality-checking, we discovered that Shape_Area and Shape_Length were reading as factors rather than numeric, which caused problems downstream. So after loading the individual csv files, we converted factors to numeric where necessary.
+
 ``` {r}
-str(riskmatrixAVI1)
-str(riskmatrixAVI2)
-str(riskmatrixAVI3)
-str(riskmatrixAVI4)
-str(riskmatrixAVI5)
-str(riskmatrixAVI6)#Shape_Area is a factor but should be a number
-riskmatrixAVI6$Shape_Area<-as.numeric(riskmatrixAVI6$Shape_Area)
+str(avi.list)
 
-str(riskmatrixAVI7)#Shape_Area is a factor but should be a number
-riskmatrixAVI7$Shape_Area<-as.numeric(riskmatrixAVI7$Shape_Area)
+as.data.frame(do.call(rbind, lapply(avi.list, function(x) {
+  c(class.Shape_area=class(x$Shape_Area), class.Shape_length=class(x$Shape_Leng))
+}))) #returns the class of the Shape_Area and Shape_Leng variables for each data.frame in the avi.list list. 
 
-str(riskmatrixAVI8)#Shape_Area is a factor but should be a number
-riskmatrixAVI8$Shape_Area<-as.numeric(riskmatrixAVI8$Shape_Area)
-
-str(riskmatrixAVI9)#Shape_Area is a factor but should be a number
-riskmatrixAVI9$Shape_Area<-as.numeric(riskmatrixAVI9$Shape_Area)
-
-str(riskmatrixAVI10)#Shape_Area is a factor but should be a number
-riskmatrixAVI10$Shape_Area<-as.numeric(riskmatrixAVI10$Shape_Area)
-
-str(riskmatrixAVI11)#Shape_Area is a factor but should be a number
-riskmatrixAVI11$Shape_Area<-as.numeric(riskmatrixAVI11$Shape_Area)
-
-str(riskmatrixAVI12)#Shape_Area is a factor but should be a number
-riskmatrixAVI12$Shape_Area<-as.numeric(riskmatrixAVI12$Shape_Area)
-
-str(riskmatrixAVI13)#Shape_Area is a factor but should be a number
-riskmatrixAVI13$Shape_Area<-as.numeric(riskmatrixAVI13$Shape_Area)
-
-str(riskmatrixAVI14)
-str(riskmatrixAVI15)
-str(riskmatrixAVI16)
-str(riskmatrixAVI17)
+avi.list2 <- lapply(avi.list[6], function(x) {
+  y <- x #create object y from the list item
+  y$Shape_Area <- as.numeric(y$Shape_Area) #convert variable to numeric
+  y$Shape_Leng <- as.numeric(y$Shape_Leng) #convert variable to numeric
+  y # returns y for each x in the list. 
+})  #returns a list made of data.frames from avi.list. Except with the class of the Shape_Area and Shape_Leng variables both changed to numeric. 
 ```
 
-#### now combine the separate tables into one
+
+The above code generated some "warning: NAs introduced as coercion". Some investigation revealed that for some csv files, the area and length columns were reading with a 1000's separator. These were preventing the columns from reading as numeric. Values with , separator were also converted to NAs when converted to numeric. 
+
+Solution 1: Open each csv file that has factor instead of numeric for Shape_area. Convert those columns to numeric withOUT a 1,000 separator. 
+
+Solution 2: Export all records from the AVI file into one csv and work with that one. 
+
+## Load single CSV file with all records
+
 ``` {r}
+avi.whole <- read.csv("rawData/AVI_Analysis_matrixV3.csv", header=T, stringsAsFactors = F)
+nrow(avi.whole)
+str(avi.whole)
+```
+
+
+# This is where Nicole left off on Nov 8 #
+
+
+
+#### Quality checking to identify and remove possible duplicates. 
+
+There are some duplicate observations in each data frame, for example `r nrow(unique(riskmatrixAVI2))` unique rows but `r nrow(riskmatrixAVI2)` rows in riskmatrixAVI2.
+
+``` {r}
+(how_many_duplicates <- as.data.frame(do.call(rbind, lapply(avi.list, function(x) {
+  c(num.rows=nrow(x), num.unique.rows=nrow(unique(x)), num.duplicated=sum(duplicated(x)))
+}))))
+```
+
+
+#### combine the various csv files into one data.frame
+
+``` {r}
+ariskmatrixAVI.A <- as.data.frame(do.call(rbind, avi.list))
+nrow(ariskmatrixAVI.A)
+```
+
+
+There are `r nrow(riskmatrixAVI.A)` observations in the data frame after combining all CSV files, so the entire risk matrix AVI attribute table has been loaded into R.
+
+
+#### Load csv as one file instead of multiple
+
+Each data frame above includes the same variables, before they are bound together in single frame, for example `r names(riskmatrixAVI1)`
+
+
+
+## now combine the separate tables into one
+
 riskmatrixAVI.A<-rbind(riskmatrixAVI1, riskmatrixAVI2, riskmatrixAVI3,
                        riskmatrixAVI4, riskmatrixAVI5, riskmatrixAVI6,
                        riskmatrixAVI7, riskmatrixAVI8, riskmatrixAVI9,
@@ -121,11 +188,6 @@ riskmatrixAVI.A<-rbind(riskmatrixAVI1, riskmatrixAVI2, riskmatrixAVI3,
                        riskmatrixAVI16, riskmatrixAVI17)
 ```
 
-There are some duplicate observations in each data frame, for example `r nrow(unique(riskmatrixAVI2))` unique observations and `r nrow(riskmatrixAVI2)` rows in riskmatrixAVI1.
-
-Each data frame above includes the same variables, before they are bound together in single frame, for example `r names(riskmatrixAVI1)`
-
-There are `r nrow(riskmatrixAVI.A)` observations in the data frame after combining all CSV files, so the entire risk matrix AVI attribute table has been loaded into R.
 
 ## Step 2. Create age classes in R based on age since stand origin
 
