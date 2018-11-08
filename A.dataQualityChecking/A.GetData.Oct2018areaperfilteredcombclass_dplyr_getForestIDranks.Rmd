@@ -38,7 +38,7 @@ The risk matrix AVI attribute table has to be exported as a series of CSV files 
 ```{r load, echo=FALSE}
 riskmatrixAVI1<-read.csv("rawData/GISfiles/May17RiskMatrixV3_SubrCM_AlpacAVI.600Kplus.csv", header=TRUE)
 
-riskmatrixAVI2<-read.csv("A.dataQualityChecking/GISfiles/May17RiskMatrixV3_SubrCM_AlpacAVI.below600K.csv", header=TRUE)
+riskmatrixAVI2<-read.csv("rawData/GISfiles/May17RiskMatrixV3_SubrCM_AlpacAVI.below600K.csv", header=TRUE)
 
 riskmatrixAVI3<-read.csv("rawData/GISfiles/May17RiskMatrixV3_SubrCM_noFMA.csv", header=TRUE)
 
@@ -69,38 +69,50 @@ riskmatrixAVI15<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionL
 riskmatrixAVI16<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionLFbelow700K.csv", header=TRUE)
 
 riskmatrixAVI17<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionNandU.csv", header=TRUE)
+```
 
+During some quality-checking, we discovered that Shape_Area and Shape_Length were reading as factors rather than numeric, which caused problems downstream. 
 
-#check to make sure that Shape_Area is a numeric variable in these files. 
+#### check to make sure that Shape_Area is a numeric variable in these files. 
+
+``` {r}
 str(riskmatrixAVI1)
 str(riskmatrixAVI2)
 str(riskmatrixAVI3)
 str(riskmatrixAVI4)
 str(riskmatrixAVI5)
 str(riskmatrixAVI6)#Shape_Area is a factor but should be a number
+riskmatrixAVI6$Shape_Area<-as.numeric(riskmatrixAVI6$Shape_Area)
+
 str(riskmatrixAVI7)#Shape_Area is a factor but should be a number
+riskmatrixAVI7$Shape_Area<-as.numeric(riskmatrixAVI7$Shape_Area)
+
 str(riskmatrixAVI8)#Shape_Area is a factor but should be a number
+riskmatrixAVI8$Shape_Area<-as.numeric(riskmatrixAVI8$Shape_Area)
+
 str(riskmatrixAVI9)#Shape_Area is a factor but should be a number
+riskmatrixAVI9$Shape_Area<-as.numeric(riskmatrixAVI9$Shape_Area)
+
 str(riskmatrixAVI10)#Shape_Area is a factor but should be a number
+riskmatrixAVI10$Shape_Area<-as.numeric(riskmatrixAVI10$Shape_Area)
+
 str(riskmatrixAVI11)#Shape_Area is a factor but should be a number
+riskmatrixAVI11$Shape_Area<-as.numeric(riskmatrixAVI11$Shape_Area)
+
 str(riskmatrixAVI12)#Shape_Area is a factor but should be a number
+riskmatrixAVI12$Shape_Area<-as.numeric(riskmatrixAVI12$Shape_Area)
+
 str(riskmatrixAVI13)#Shape_Area is a factor but should be a number
+riskmatrixAVI13$Shape_Area<-as.numeric(riskmatrixAVI13$Shape_Area)
+
 str(riskmatrixAVI14)
 str(riskmatrixAVI15)
 str(riskmatrixAVI16)
 str(riskmatrixAVI17)
+```
 
-#For some reason, my Central Mixedwood files from July treat it as a factor, which has #affected the calculated total area of ForestID classes within the Central Mixedwood #region
-riskmatrixAVI6$Shape_Area<-as.numeric(riskmatrixAVI6$Shape_Area)
-riskmatrixAVI7$Shape_Area<-as.numeric(riskmatrixAVI7$Shape_Area)
-riskmatrixAVI8$Shape_Area<-as.numeric(riskmatrixAVI8$Shape_Area)
-riskmatrixAVI9$Shape_Area<-as.numeric(riskmatrixAVI9$Shape_Area)
-riskmatrixAVI10$Shape_Area<-as.numeric(riskmatrixAVI10$Shape_Area)
-riskmatrixAVI11$Shape_Area<-as.numeric(riskmatrixAVI11$Shape_Area)
-riskmatrixAVI12$Shape_Area<-as.numeric(riskmatrixAVI12$Shape_Area)
-riskmatrixAVI13$Shape_Area<-as.numeric(riskmatrixAVI13$Shape_Area)
-
-#now combine the separate tables into one
+#### now combine the separate tables into one
+``` {r}
 riskmatrixAVI.A<-rbind(riskmatrixAVI1, riskmatrixAVI2, riskmatrixAVI3,
                        riskmatrixAVI4, riskmatrixAVI5, riskmatrixAVI6,
                        riskmatrixAVI7, riskmatrixAVI8, riskmatrixAVI9,
