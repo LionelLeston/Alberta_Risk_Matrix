@@ -36,39 +36,39 @@ The first part of creating the risk matrix is done in ArcGIS. For some reason, I
 The risk matrix AVI attribute table has to be exported as a series of CSV files because it is too large (6120960 rows) for a single CSV file (limit ~1 million rows) to contain all of the attribute table. I will then combine several separate CSV files after reading them into R, using rbind(). Before combining the separate read-in files with rbind(), I made sure that the columns and column names in each .csv file were identical. I also made sure that there were no duplicate observations (i.e.unique=nrow) and that the total number of observations after rbinding the CSV files was 6120960 observations.
 
 ```{r load, echo=FALSE}
-riskmatrixAVI1<-read.csv("A.dataQualityChecking/GISfiles/May17RiskMatrixV3_SubrCM_AlpacAVI.600Kplus.csv", header=TRUE)
+riskmatrixAVI1<-read.csv("rawData/GISfiles/May17RiskMatrixV3_SubrCM_AlpacAVI.600Kplus.csv", header=TRUE)
 
 riskmatrixAVI2<-read.csv("A.dataQualityChecking/GISfiles/May17RiskMatrixV3_SubrCM_AlpacAVI.below600K.csv", header=TRUE)
 
-riskmatrixAVI3<-read.csv("A.dataQualityChecking/GISfiles/May17RiskMatrixV3_SubrCM_noFMA.csv", header=TRUE)
+riskmatrixAVI3<-read.csv("rawData/GISfiles/May17RiskMatrixV3_SubrCM_noFMA.csv", header=TRUE)
 
-riskmatrixAVI4<-read.csv("A.dataQualityChecking/GISfiles/RiskMatrixV3attributetableSubregion0.csv", header=TRUE)
+riskmatrixAVI4<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregion0.csv", header=TRUE)
 
-riskmatrixAVI5<-read.csv("A.dataQualityChecking/GISfiles/RiskMatrixV3attributetableSubregionABandM.csv", header=TRUE)
+riskmatrixAVI5<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionABandM.csv", header=TRUE)
 
-riskmatrixAVI6<-read.csv("A.dataQualityChecking/GISfiles/July11RiskMatrixV3_SubrCM_newANCtoMillar.csv", header=TRUE)
+riskmatrixAVI6<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_newANCtoMillar.csv", header=TRUE)
 
-riskmatrixAVI7<-read.csv("A.dataQualityChecking/GISfiles/July11RiskMatrixV3_SubrCM_newTolkoHighPrairieAndFootner.csv", header=TRUE)
+riskmatrixAVI7<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_newTolkoHighPrairieAndFootner.csv", header=TRUE)
 
-riskmatrixAVI8<-read.csv("A.dataQualityChecking/GISfiles/July11RiskMatrixV3_SubrCM_TolkoVanderwell.csv", header=TRUE)
+riskmatrixAVI8<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_TolkoVanderwell.csv", header=TRUE)
 
-riskmatrixAVI9<-read.csv("A.dataQualityChecking/GISfiles/July11RiskMatrixV3_SubrCM_VanderwellContractorsFMA.csv", header=TRUE)
+riskmatrixAVI9<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_VanderwellContractorsFMA.csv", header=TRUE)
 
-riskmatrixAVI10<-read.csv("A.dataQualityChecking/GISfiles/July11RiskMatrixV3_SubrCM_WestFraserAndTolko.csv", header=TRUE)
+riskmatrixAVI10<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_WestFraserAndTolko.csv", header=TRUE)
 
-riskmatrixAVI11<-read.csv("A.dataQualityChecking/GISfiles/July11RiskMatrixV3_SubrCM_WestFraserSlaveLakeFMA.csv", header=TRUE)
+riskmatrixAVI11<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_WestFraserSlaveLakeFMA.csv", header=TRUE)
 
-riskmatrixAVI12<-read.csv("A.dataQualityChecking/GISfiles/July11RiskMatrixV3_SubrCM_WeyerhauserGrandePrairie.csv", header=TRUE)
+riskmatrixAVI12<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_WeyerhauserGrandePrairie.csv", header=TRUE)
 
-riskmatrixAVI13<-read.csv("A.dataQualityChecking/GISfiles/July11RiskMatrixV3_SubrCM_WeyerhauserPembinaTimberland.csv", header=TRUE)
+riskmatrixAVI13<-read.csv("rawData/GISfiles/July11RiskMatrixV3_SubrCM_WeyerhauserPembinaTimberland.csv", header=TRUE)
 
-riskmatrixAVI14<-read.csv("A.dataQualityChecking/GISfiles/RiskMatrixV3attributetableSubregionLBHandDM.csv", header=TRUE)
+riskmatrixAVI14<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionLBHandDM.csv", header=TRUE)
 
-riskmatrixAVI15<-read.csv("A.dataQualityChecking/GISfiles/RiskMatrixV3attributetableSubregionLFabove700K.csv", header=TRUE)
+riskmatrixAVI15<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionLFabove700K.csv", header=TRUE)
 
-riskmatrixAVI16<-read.csv("A.dataQualityChecking/GISfiles/RiskMatrixV3attributetableSubregionLFbelow700K.csv", header=TRUE)
+riskmatrixAVI16<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionLFbelow700K.csv", header=TRUE)
 
-riskmatrixAVI17<-read.csv("A.dataQualityChecking/GISfiles/RiskMatrixV3attributetableSubregionNandU.csv", header=TRUE)
+riskmatrixAVI17<-read.csv("rawData/GISfiles/RiskMatrixV3attributetableSubregionNandU.csv", header=TRUE)
 
 
 #check to make sure that Shape_Area is a numeric variable in these files. 
@@ -152,7 +152,7 @@ AlbertaForID_Ranks_final_long<-riskmatrixAVI.A%>%
   group_by(ForestID,Rating)%>%
   summarize(ForestArea=sum(Shape_Area)/10000)
 AlbertaForID_Ranks_final_long$ForestArea[is.na(AlbertaForID_Ranks_final_long$ForestArea)]<-0 #replace NAs
-write.csv(AlbertaForID_Ranks_final_long, file="rawData/AlbertaForID_Ranks_final_long.csv")
+write.csv(AlbertaForID_Ranks_final_long, file="Output/AlbertaForID_Ranks_final_long.csv")
 #Calculates cumulative area in risk matrix AVI geodatabase within each combination of subregion, stand, age class, and TPR, and ForestID ranking.
 ```
 
@@ -309,7 +309,7 @@ merged1w$G.141up[is.na(merged1w$G.141up)]<-0 #replace NAs
 merged1w$M.141up[is.na(merged1w$M.141up)]<-0 #replace NAs
 merged1w$F.141up[is.na(merged1w$F.141up)]<-0 #replace NAs
 merged1w$U.141up[is.na(merged1w$U.141up)]<-0 #replace NAs
-write.csv(merged1w, file="A.dataQualityChecking/totalarea.persubregion.stand.age.tpr.csv")
+write.csv(merged1w, file="Output/totalarea.persubregion.stand.age.tpr.csv")
 ```
 
 This data is currently in wide format.
@@ -330,7 +330,7 @@ The mastermatrix will be saved to an RData file and cleaned up prior to using it
 pointcountsformatrix<-read.csv("rawData/pointsCdatacheckMay23.csv", header=TRUE)
 pointcountsformatrix$ForestID<-paste0(pointcountsformatrix$subregion.name,".",pointcountsformatrix$standtype.name,".",pointcountsformatrix$ageclass,".",pointcountsformatrix$tpr.name)
 pointsbyForestID<-tapply(pointcountsformatrix$counter, pointcountsformatrix$ForestID, sum)
-write.csv(pointsbyForestID, file = "A.dataQualityChecking/pointsbyForestID.csv")
+write.csv(pointsbyForestID, file = "Output/pointsbyForestID.csv")
 #Used Data to Columns in Excel to split ForestID back into separate columns.
 #matched up column categories from separate files in Excel, using the values in "pointsbyForestID"
 
@@ -345,6 +345,6 @@ AlbertaMastermatrix$Area.1000units<-AlbertaMastermatrix$Area/1000
 AlbertaMastermatrix$SurveyEffort<-AlbertaMastermatrix$Count/AlbertaMastermatrix$Area.1000units
 AlbertaMastermatrix$Count[is.na(AlbertaMastermatrix$Count)]<-0
 AlbertaMastermatrix$SurveyEffort[is.na(AlbertaMastermatrix$SurveyEffort)]<-0
-write.csv(AlbertaMastermatrix, file="RDataFiles/AlbertaMastermatrix.csv")
+write.csv(AlbertaMastermatrix, file="Output/AlbertaMastermatrix.csv")
 save(AlbertaMastermatrix, file="RDataFiles/AlbertaMastermatrix.RData")
 ```
