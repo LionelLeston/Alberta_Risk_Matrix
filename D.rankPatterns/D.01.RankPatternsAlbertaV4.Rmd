@@ -324,7 +324,7 @@ kable(rbind(head(area.rank_subregion, 10), tail(area.rank_subregion, 10)))
 ##### Plots
 
 ``` {r, Fig.Rank_Bec2, fig.height=5, fig.width=5, dpi=150}
-ggplot(mastermatrix, aes(x=as.numeric(as.character(FinalRank)), fill=subregion.name)) + geom_histogram(bins=6, col="black") + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Number of Stand Types") + scale_fill_manual(values=palsub, name = "Subregion") + myfacettheme3 + xlab("Stand Rank")
+ggplot(mastermatrix, aes(x=as.numeric(as.character(FinalRank)), fill=subregion.name)) + geom_histogram(bins=6, col="black") + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Number of Stands Per Rank") + scale_fill_manual(values=palsub, name = "Subregion") + myfacettheme3 + xlab("Stand Rank")#Formerly Number of Stand Types
 ``` 
 
 ``` {r, Fig.Rank_BEC5, fig.height=5, fig.width=5, dpi=150}
@@ -332,11 +332,11 @@ ggplot(area.rank_subregion, aes(x=as.numeric(as.character(FinalRank)), y=Area100
 ``` 
 
 ``` {r, Fig.Rank_Bec3, fig.height=10, fig.height=6, dpi=150}
-ggplot(mastermatrix, aes(x=as.numeric(as.character(FinalRank)), fill=subregion.name)) + geom_histogram(aes(y=..density..), bins=6, col="black") + facet_wrap(~subregion.name, ncol=2) + myfacettheme2 + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Proportion of Stand Types within Subregion") + scale_fill_manual(values=palsub, guide=FALSE) + xlab("Stand Rank")
+ggplot(mastermatrix, aes(x=as.numeric(as.character(FinalRank)), fill=subregion.name)) + geom_histogram(aes(y=..density..), bins=6, col="black") + facet_wrap(~subregion.name, ncol=2) + myfacettheme2 + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Proportion of Stands by Rank within Subregion") + scale_fill_manual(values=palsub, guide=FALSE) + xlab("Stand Rank")#Formerly Proportion of Stand Types within Subregion
 ```
 
 ``` {r, Fig.Rank_Bec4, fig.height=6, fig.width=10, dpi=200}
-ggplot(rank_counts_subregion, aes(x=as.numeric(as.character(FinalRank)), y=NumberStandTypes, fill=Subregion)) + geom_bar(stat="identity", position=position_dodge(width=0.8), width=0.8, col="black") + scale_fill_manual(values=palsub2, name="Subregion", guide=FALSE) + scale_x_continuous(labels=c(1:6), breaks=1:6) +ylab("Number of Stand Types") + myfacettheme3 + geom_text(aes(label=Subregion), position=position_dodge(width=0.8), vjust=0.4, hjust=-0.1, angle=90, size=3) + xlab("Stand Rank") + ylim(0, 140)
+ggplot(rank_counts_subregion, aes(x=as.numeric(as.character(FinalRank)), y=NumberStandTypes, fill=Subregion)) + geom_bar(stat="identity", position=position_dodge(width=0.8), width=0.8, col="black") + scale_fill_manual(values=palsub2, name="Subregion", guide=FALSE) + scale_x_continuous(labels=c(1:6), breaks=1:6) +ylab("Number of Stand Types") + myfacettheme3 + geom_text(aes(label=Subregion), position=position_dodge(width=0.8), vjust=0.4, hjust=-0.1, angle=90, size=3) + xlab("Stand Rank") + ylim(0, 140)#Formerly Number of Stand Types
 ```
 
 ``` {r, Fig.Rank_Bec6, fig.height=6, fig.width=9, dpi=200}
@@ -358,15 +358,30 @@ ggplot(mastermatrix.noNA, aes(x=standtype.name, y=as.numeric(as.character(FinalR
 ggplot(mastermatrix.noNA, aes(x=standtype.name, y=as.numeric(as.character(FinalRank)))) + geom_jitter(alpha=0.5, position=position_jitter(height=0.05, width=0.2)) + myfacettheme1 + scale_y_continuous(labels=c(1:6), breaks=1:6) + ylab("Stand Rank") + xlab("Dominant Stand Types")
 ```
 
+``` {r, Fig.Rank_SPGrp1, fig.height=3, fig.width=7, dpi=150}
+ggplot(mastermatrix.noNA, aes(x=coarse.forest.type, y=as.numeric(as.character(FinalRank)), col=coarse.forest.type)) + geom_jitter(alpha=0.5, position=position_jitter(height=0.1, width=0.2)) + myfacettheme1 + scale_y_continuous(labels=c(1:6), breaks=1:6) + scale_color_manual(values=palstand, guide=FALSE) + ylab("Stand Rank") + xlab("Dominant Coarse Forest Types")
+
+ggplot(mastermatrix.noNA, aes(x=coarse.forest.type, y=as.numeric(as.character(FinalRank)))) + geom_jitter(alpha=0.5, position=position_jitter(height=0.05, width=0.2)) + myfacettheme1 + scale_y_continuous(labels=c(1:6), breaks=1:6) + ylab("Stand Rank") + xlab("Dominant Coarse Forest Types")
+```
+
 Preprocessing: Calculating numbers of stands per Stand Type (formerly Species Group) and Rank
 
 *Stand type: C-all=Conifer-AllCon; C-Pl=Conifer-Lodgepole Pine; C-Sx=Conifer-Hybrid Spruce; D=Deciduous (Pure Hardwood); MW-C=Mixedwood-Conifer; MW-D=Mixedwood-Deciduous; MW-DPl=Mixedwood-Deciduous-Lodgepole Pine; MW-DSb=Mixedwood-Deciduous-Black Spruce; MW-DSw=Mixedwood-Deciduous-White Spruce; Mw-Pl=Mixedwood-Lodgepole Pine; MW-Sb=Mixedwood-Black Spruce; MW-Sw=Mixedwood-White Spruce; P=Pure Pine; Sb=Pure Black Spruce; Sw=Pure White Spruce
+
+*Coarse forest type: C=Conifer; D=Deciduous; M=Mixedwood
 
 ``` {r}
 tmpdat <- dcast(mastermatrix, FinalRank ~ standtype.name, fun.aggregate=length, value.var="FinalRank")
 rank_counts_spgrp <- melt(tmpdat, id.vars="FinalRank")
 colnames(rank_counts_spgrp) <- c("FinalRank", "StandType", "NumberStandTypes")
 rm(tmpdat)
+```
+
+``` {r}
+tmpdat2 <- dcast(mastermatrix, FinalRank ~ coarse.forest.type, fun.aggregate=length, value.var="FinalRank")
+rank_counts_spgrp2 <- melt(tmpdat2, id.vars="FinalRank")
+colnames(rank_counts_spgrp2) <- c("FinalRank", "CoarseForestType", "NumberStandTypes")
+rm(tmpdat2)
 ```
 
 
@@ -379,23 +394,48 @@ area.rank_stand$Area10000s <- area.rank_stand$ForestArea / 10000
 kable(rbind(head(area.rank_stand,10), tail(area.rank_stand, 10)))
 ```
 
-
-``` {r, Fig.Rank_SPGrp2, fig.height=7, fig.width=6, dpi=150}
-ggplot(mastermatrix, aes(x=FinalRank, fill=standtype.name)) + geom_histogram(bins=6, col="black") + myfacettheme3 + scale_fill_manual(values=palstand, name="Dominant Stand Type") + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Number of Stand Types") + guides(fill=guide_legend(ncol=1)) + xlab("Stand Rank")
+``` {r}
+area.rank_stand2 <-aggregate(mastermatrix$ForestArea ~ mastermatrix$FinalRank + mastermatrix$coarse.forest.type, FUN=sum, drop=F) #sum area across all combinations of rank and SpeciesGroup
+colnames(area.rank_stand2) <- c("FinalRank", "CoarseForestType", "ForestArea")
+area.rank_stand2$Area10000s <- area.rank_stand2$ForestArea / 10000
+kable(rbind(head(area.rank_stand2,10), tail(area.rank_stand2, 10)))
+#NEW: COARSE FOREST TYPE
 ```
 
+
+``` {r, Fig.Rank_SPGrp2, fig.height=7, fig.width=6, dpi=150}
+ggplot(mastermatrix, aes(x=FinalRank, fill=standtype.name)) + geom_histogram(bins=6, col="black") + myfacettheme3 + scale_fill_manual(values=palstand, name="Dominant Stand Type") + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Number of Stands by Stand type") + guides(fill=guide_legend(ncol=1)) + xlab("Stand Rank")
+#Formerly Number of Stand Types
+```
+
+``` {r, Fig.Rank_SPGrp2, fig.height=7, fig.width=6, dpi=150}
+ggplot(mastermatrix, aes(x=FinalRank, fill=coarse.forest.type)) + geom_histogram(bins=6, col="black") + myfacettheme3 + scale_fill_manual(values=palstand, name="Coarse Forest Type") + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Number of Stands by Coarse Forest Type") + guides(fill=guide_legend(ncol=1)) + xlab("Stand Rank")
+#NEW: COARSE FOREST TYPE
+```
 
 ``` {r, Fig.Rank_SPGrp5, fig.height=7, fig.width=6, dpi=150}
 ggplot(area.rank_stand, aes(x=as.numeric(as.character(FinalRank)), y=Area10000s, fill=StandType))+ geom_bar(stat="identity", col="black") + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Forest Area (10,000s of ha)") + scale_fill_manual(values=palstand, name="Dominant Stand Type") + myfacettheme3 + xlab("Stand Rank") + guides(fill=guide_legend(ncol=1)) 
 ``` 
 
+``` {r, Fig.Rank_SPGrp5, fig.height=7, fig.width=6, dpi=150}
+ggplot(area.rank_stand2, aes(x=as.numeric(as.character(FinalRank)), y=Area10000s, fill=CoarseForestType))+ geom_bar(stat="identity", col="black") + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Forest Area (10,000s of ha)") + scale_fill_manual(values=palstand, name="Coarse Forest Type") + myfacettheme3 + xlab("Stand Rank") + guides(fill=guide_legend(ncol=1)) #NEW: COARSE FOREST TYPE
+``` 
 
 ``` {r, Fig.Rank_SPGrp3, fig.height=6, fig.width=10, depi=200}
 ggplot(rank_counts_spgrp, aes(x=FinalRank, y=NumberStandTypes, fill=StandType)) + geom_bar(stat="identity", position=position_dodge(width=0.8), width=0.8, col="black")   + myfacettheme2 + scale_fill_manual(values=palstand2, name="Stand Type") + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylim(0,50) + ylab("Number of Stands") + xlab("Stand Rank") + guides(fill=guide_legend(ncol=6))
 ```
 
+``` {r, Fig.Rank_SPGrp3, fig.height=6, fig.width=10, depi=200}
+ggplot(rank_counts_spgrp2, aes(x=FinalRank, y=NumberStandTypes, fill=CoarseForestType)) + geom_bar(stat="identity", position=position_dodge(width=0.8), width=0.8, col="black")   + myfacettheme2 + scale_fill_manual(values=palstand2, name="Coarse Forest Type") + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylim(0,50) + ylab("Number of Stands") + xlab("Stand Rank") + guides(fill=guide_legend(ncol=6))#NEW: COARSE FOREST TYPE
+```
+
 ``` {r, Fig.Rank_SPGrp6, fig.height=6, fig.width=10, depi=200}
 ggplot(area.rank_stand, aes(x=as.numeric(as.character(FinalRank)), y=Area10000s, fill=StandType)) + geom_bar(stat="identity", position=position_dodge(width=0.8), width=0.8, col="black")  + myfacettheme2 + scale_fill_manual(values=palstand2, name="Stand Type") + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylim(0,50) + ylab("Forest Area (10,000s of ha)") + xlab("Stand Rank") + guides(fill=guide_legend(ncol=6))
+```
+
+``` {r, Fig.Rank_SPGrp6, fig.height=6, fig.width=10, depi=200}
+ggplot(area.rank_stand2, aes(x=as.numeric(as.character(FinalRank)), y=Area10000s, fill=CoarseForestType)) + geom_bar(stat="identity", position=position_dodge(width=0.8), width=0.8, col="black")  + myfacettheme2 + scale_fill_manual(values=palstand2, name="Coarse Forest Type") + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylim(0,50) + ylab("Forest Area (10,000s of ha)") + xlab("Stand Rank") + guides(fill=guide_legend(ncol=6))
+#NEW: COARSE FOREST TYPE
 ```
 
 
@@ -403,9 +443,14 @@ ggplot(area.rank_stand, aes(x=as.numeric(as.character(FinalRank)), y=Area10000s,
 ggplot(mastermatrix, aes(x=FinalRank, fill=standtype.name)) + geom_histogram(aes(y=..density..), bins=6, col="black") + facet_wrap(~standtype.name, ncol=3) + myfacettheme2 + scale_fill_manual(values=palstand, guide=FALSE) + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Proportion of Stand Types") + xlab("Stand Rank") 
 ```
 
+``` {r, Fig.Rank_SPGrp4, fig.height=10, fig.width=7, dpi=150}
+ggplot(mastermatrix, aes(x=FinalRank, fill=coarse.forest.type)) + geom_histogram(aes(y=..density..), bins=6, col="black") + facet_wrap(~coarse.forest.type, ncol=3) + myfacettheme2 + scale_fill_manual(values=palstand, guide=FALSE) + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Proportion of Coarse Forest Types") + xlab("Stand Rank") 
+```
+
 
 ``` {r}
 rm(area.rank_stand)
+rm(area.rank_stand2)
 ```
 
 
@@ -414,6 +459,10 @@ rm(area.rank_stand)
 
 ``` {r, Fig.Rank_BECSPGrp1, fig.height=11, fig.width=5, dpi=150}
 ggplot(mastermatrix.noNA, aes(x=standtype.name, y=FinalRank, col=standtype.name)) + geom_jitter(alpha=0.5, position=position_jitter(height=0.1, width=0.1)) + myfacettheme4 + facet_wrap(~subregion.name, ncol=1) + scale_color_manual(values=palstand, guide=FALSE)+ scale_y_continuous(labels=c(1:6), breaks=1:6)  + ylab("Stand Rank") + xlab("Stand Type")
+```
+
+``` {r, Fig.Rank_BECSPGrp1, fig.height=11, fig.width=5, dpi=150}
+ggplot(mastermatrix.noNA, aes(x=coarse.forest.type, y=FinalRank, col=coarse.forest.type)) + geom_jitter(alpha=0.5, position=position_jitter(height=0.1, width=0.1)) + myfacettheme4 + facet_wrap(~subregion.name, ncol=1) + scale_color_manual(values=palstand, guide=FALSE)+ scale_y_continuous(labels=c(1:6), breaks=1:6)  + ylab("Stand Rank") + xlab("Coarse Forest Type")#NEW: COARSE FOREST TYPE
 ```
 
 Preprocessing: Calculating numbers of stands per subregion, stand type, and rank 
@@ -426,6 +475,14 @@ rank_counts_substand <- rank_counts_substand[!rank_counts_substand$FinalRank %in
 rm(tmpdat)
 ```
 
+``` {r}
+tmpdat2 <- dcast(mastermatrix, subregion.name + coarse.forest.type ~ FinalRank, fun.aggregate=length, value.var="FinalRank")
+rank_counts_substand2 <- melt(tmpdat2, id.vars=c("coarse.forest.type", "subregion.name"))
+colnames(rank_counts_substand2) <- c("CoarseForestType", "Subregion", "FinalRank", "NumberStandTypes")
+rank_counts_substand2 <- rank_counts_substand2[!rank_counts_substand2$FinalRank %in% "NA",]
+rm(tmpdat2)#NEW: COARSE FOREST TYPE
+```
+
 
 Preprocessing: Calculating areas of forest per subregion, stand type, and rank
 
@@ -435,14 +492,32 @@ colnames(area.rank_substand) <- c("FinalRank", "Subregion", "StandType", "Forest
 area.rank_substand$Area10000s <- area.rank_substand$ForestArea / 10000
 kable(rbind(head(area.rank_substand,10), tail(area.rank_substand, 10)))
 ```
+#STOP HERE NOV. 7. FOR SOME REASON, R ISN'T SAVING THIS DATA FRAME.
+#SUBSEQUENT GGPLOTS SAY THAT DF DOESN'T EXIST AND I NEED TO KEEP RECREATING IT.
+``` {r}
+area.rank_substand2 <-aggregate(mastermatrix$ForestArea ~ mastermatrix$FinalRank + mastermatrix$subregion.name + mastermatrix$coarse.forest.type, FUN=sum, drop=F) #sum area across all combinations of rank, coarse forest type, and subregion
+colnames(area.rank_substand2) <- c("FinalRank", "Subregion", "CoarseForestType", "ForestArea")
+area.rank_substand2$Area10000s <- area.rank_substand2$ForestArea / 10000
+kable(rbind(head(area.rank_substand2,10), tail(area.rank_substand2, 10)))
+```
 
 
 ``` {r, Fig.Rank_BECSPGrp2, fig.height=10, fig.width=10, dpi=200}
 ggplot(mastermatrix, aes(x=FinalRank, fill=standtype.name)) + geom_histogram(bins=6, col="black") + myfacettheme3 + scale_fill_manual(values=palstand, name="Stand Type") + facet_wrap(~subregion.name, ncol=2) + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Number of Stand Types") + guides(fill=guide_legend(ncol=1)) + xlab("Stand Rank")
 ```
 
+``` {r, Fig.Rank_BECSPGrp2, fig.height=10, fig.width=10, dpi=200}
+ggplot(mastermatrix, aes(x=FinalRank, fill=coarse.forest.type)) + geom_histogram(bins=6, col="black") + myfacettheme3 + scale_fill_manual(values=palstand, name="Coarse Forest Type") + facet_wrap(~subregion.name, ncol=2) + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Number of Stand Types") + guides(fill=guide_legend(ncol=1)) + xlab("Stand Rank")
+#NEW: COARSE FOREST TYPE
+```
+
 ``` {r, Fig.Rank_BECSPGrp5, fig.height=10, fig.width=10, dpi=200}
+area.rank_substand$Area10000s <- area.rank_substand$ForestArea / 10000
 ggplot(area.rank_substand, aes(x=FinalRank, y=Area10000s, fill=StandType)) + geom_bar(stat="identity", col="black") + myfacettheme3 + scale_fill_manual(values=palstand, name="Stand Type") + facet_wrap(~Subregion, ncol=2) + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Forest Area (10,000s of ha)") + guides(fill=guide_legend(ncol=1)) + xlab("Stand Rank")
+```
+
+``` {r, Fig.Rank_BECSPGrp5, fig.height=10, fig.width=10, dpi=200}
+ggplot(area.rank_substand2, aes(x=FinalRank, y=Area10000s, fill=CoarseForestType)) + geom_bar(stat="identity", col="black") + myfacettheme3 + scale_fill_manual(values=palstand, name="Coarse Forest Type") + facet_wrap(~Subregion, ncol=2) + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Forest Area (10,000s of ha)") + guides(fill=guide_legend(ncol=1)) + xlab("Stand Rank")#NEW: COARSE FOREST TYPE
 ```
 
 
@@ -469,6 +544,7 @@ ggplot(rank_counts_substand, aes(x=StandType, y=NumberStandTypes, fill=FinalRank
 ```
 
 ``` {r, Fig.Rank_BECSpgrp7, fig.height = 11, fig.width=8.5, dpi=300}
+area.rank_substand$Area10000s <- area.rank_substand$ForestArea / 10000
 ggplot(area.rank_substand, aes(x=StandType, y=Area10000s, fill=Subregion)) + geom_bar(stat="identity", col="black", position=position_dodge(width=0.8), width=0.8) + ylim(0,12) + myfacettheme1 + scale_fill_manual(values=palsub, name="Subregion") + facet_wrap(~FinalRank, ncol=1) + ylab("Forest Area (10,000s of ha)") + xlab("Stand Type")
 
 ggplot(area.rank_substand, aes(x=StandType, y=Area10000s, fill=as.character(FinalRank))) + geom_bar(stat="identity", position=position_dodge(width=0.8), width=0.8) + ylim(0,12) + myfacettheme4 +  facet_wrap(~Subregion, ncol=1) + ylab("Forest Area (10,000s of ha)") + scale_fill_manual(values=palrank, guide=FALSE) + geom_text(aes(label=FinalRank), position=position_dodge(width=0.8), vjust=-0.3, hjust=0.3, angle=0, size=2) + xlab("Stand Type")
