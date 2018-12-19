@@ -38,7 +38,7 @@ Once survey effort has been added to the risk matrix AVI attribute table, it wil
 The data can be reformatted separately in Excel to make the risk matrix survey effort Excel file with coloured cells, to go with the gap analysis report.and which was linked to the risk matrix AVI in ArcGIS can also provide us with a master matrix for Alberta, to be linked to the actual individual point counts rather than just the summarized point count totals per ForestID.
 
 ```{r create-Alberta-mastermatrix, echo=FALSE}
-AlbertaMastermatrix<-read.csv("RDataFiles/AlbertaMastermatrix.csv", header=TRUE)
+AlbertaMastermatrix<-read.csv("Output/AlbertaMastermatrix.csv", header=TRUE)
 write.csv(AlbertaMastermatrix, file="C.samplingGapAnalysis/GapAnalysisSurveyEffortPerForestID.csv")
 
 ```
