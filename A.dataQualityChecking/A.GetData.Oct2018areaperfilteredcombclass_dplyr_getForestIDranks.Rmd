@@ -30,8 +30,8 @@ The most recent version of this analysis was run in September, and includes the 
 
 ## Background work done before it came to U of A
 
-* Creation of matrix and ranks of matrix stand classes identified in that matrix - see INSERT DOCUMENT FILENAME
-* Translation of that matrix into a spatial file - see PROJECT REPORT FROM FORSITE
+* Creation of matrix and ranks of matrix stand classes identified in that matrix - see **INSERT DOCUMENT FILENAME**
+* Translation of that matrix into a spatial file - see **PROJECT REPORT FROM FORSITE**
 
 ## Background work done by U of A folks before switching over to R
 
@@ -77,24 +77,23 @@ Load single CSV file with all records exported from *AVI_Analysis_matrixV3* laye
 ```{r load, echo=FALSE}
 ariskmatrixAVI.A <- read.csv("rawData/AVI_Analysis_matrixV3.csv", header=T, stringsAsFactors = F)
 nrow(ariskmatrixAVI.A)
-nrow(unique(ariskmatrixAVI.A))
 str(ariskmatrixAVI.A)
 ```
 
 There are `r nrow(riskmatrixAVI.A)` rows/observations in the data frame, so all records from the the entire risk matrix AVI attribute table has been loaded into R.
 
-
-
-# Nicole left off here on November 9th 
-
 ## Question to resolve: why are there twice as many polygons in the matrix AVI than in the basic AVI?
 
+Question to Jeremy Beal (Forsite) in Nov 2018: Nicole and I had a quick question about the risk matrix AVI created by FORSITE. It was accompanied by a second geodatabase which was a composite AVI (mbca_avi). The risk matrix AVI geodatabase has many more polygons in it. Based on the FORSITE report, it looks like additional polygons were created in/added to the composite AVI to account for very recent cutblocks and fires before adding the risk matrix. We're assuming that the larger number of polygons in the risk matrix geodatabase is due to these additional fire and cutblock polygons that were not in the composite AVI. Is that correct?
 
+Reply from Jeremy Beal in Nov 2018:  That’s correct, as part of updating the forest cover we updated for cutblocks and fires that were missing from the AVI layer. I believe this is detailed in the final report. Feel free to give me a call to discuss.
 
 
 ## Step 2. Create age classes in R based on age since stand origin
 
-In the risk matrix for Alberta, foresters assign forest stands to age classes that are meaningful for foresters, but are probably meaningful for breeding birds as well.
+In the AVI file, age is continuous. However, the matrix required a categorical variable. Age classes were intended to be  meaningful for both foresters and  breeding birds.
+
+In exploring the age variable, we saw that some forest stand ages were "9999" a commonly used indicator for "NA". So the below ifelse statement(s) reclass the continuous AGE_2017 column into age classes and NA. 
 
 ```{r get-age-classes, echo=FALSE}
 ariskmatrixAVI.A$ageclass<-{ifelse(ariskmatrixAVI.A$AGE_2017==9999,"NA",
@@ -105,31 +104,122 @@ ariskmatrixAVI.A$ageclass<-{ifelse(ariskmatrixAVI.A$AGE_2017==9999,"NA",
                                     ifelse(ariskmatrixAVI.A$AGE_2017 <101,"Age 81-100 Y",
                                       ifelse(ariskmatrixAVI.A$AGE_2017 <141,"Age 101-140 Y","Age 141+")))))))
 }
-#appears to be an artifact from a time when age class wasn't calculated in ArcGIS
-#keep in script for now
 ```
 
-## Step 3. Summarize cumulative area, ranks, and relative sampling effort to date within each combination of subregion, stand type, age class, and timber productivity rating
-
-We will use the *dplyr* package in R to summarize total area for each potential combination of these 4 factors.
+## Step 4. Creat master matrix and filter out invalid forest stand types. 
 
 We first create a list of ranks for each ForestID. ForestID is created by concatenating the subregion name, stand name, age class, and timber productivity rating. Note that some polygons assigned to the same ForestID may be assigned different ranks with some ranked from 1 to 6 and others ranked as 0, NA, or 999.
 
-```{r summarize-area-and-create-ranks-list, echo=FALSE}
-library(dplyr)
+``` {r create.new.columns.createForID}
 ariskmatrixAVI.A$subregion.name<-ariskmatrixAVI.A$NaturalSubRegion
 ariskmatrixAVI.A$standtype.name<-ariskmatrixAVI.A$StandType
 ariskmatrixAVI.A$tpr.name<-ariskmatrixAVI.A$TPR
-#appears to be an artifact from a time when tpr.name wasn't calculated in ArcGIS
-#keep in script for now
 
+#Create ForID
 ariskmatrixAVI.A$ForestID<-paste0(ariskmatrixAVI.A$subregion.name,".",ariskmatrixAVI.A$standtype.name,".",ariskmatrixAVI.A$ageclass,".",ariskmatrixAVI.A$tpr.name)
-#NEW SECTION (September, 2018)
-#ranks and area summarized by ForestID
-AlbertaForID_Ranks_final_long<-ariskmatrixAVI.A%>%
+```
+
+Note that some ForIDs have 0 for Natural Sugregion, or other odd values. These stands are missing attribute information for at least one of the four attributes, and are therefore excluded from the analysis. 
+
+Here we remove those by creating "Master Matrix", the factorial combination of all valid levels of all attribute factors. 
+
+``` {r}
+unique(ariskmatrixAVI.A$subregion.name)
+subregion.levels <- factor(unique(ariskmatrixAVI.A$subregion.name)[2:length(unique(ariskmatrixAVI.A$subregion.name))])
+
+unique(ariskmatrixAVI.A$standtype.name)
+standtype.levels <- factor(unique(ariskmatrixAVI.A$standtype.name)[-which(unique(ariskmatrixAVI.A$standtype.name) == "0")])
+
+unique(ariskmatrixAVI.A$tpr_name)
+tpr.levels <- factor(unique(ariskmatrixAVI.A$tpr.name)[-which(unique(ariskmatrixAVI.A$tpr.name) == "")])
+tpr.levels <- factor(tpr.levels, levels=c("U", "F", "M", "G"))
+
+unique(ariskmatrixAVI.A$ageclass)
+ageclass.levels <- factor(unique(ariskmatrixAVI.A$ageclass)[-which(unique(ariskmatrixAVI.A$ageclass)=="NA")])
+ageclass.levels <- factor(ageclass.levels, levels=c("Age 0-2 Y","Age 3-30 Y","Age 31-60 Y","Age 61-80 Y","Age 81-100 Y","Age 101-140 Y","Age 141+"), ordered=T)
+```
+
+Valid subregion levels: `r subregion.levels`
+Valid stand type levels: `r standtype.levels`
+Valid tpr levels: `r tpr.levels`
+Valid Age class levels: `r ageclass.levels`
+
+Use expand.grid to create a data.frame with the factorial combination of all levels. This is all theoretically possible combinations of the stand attributes. 
+
+``` {r}
+mastermatrix.ForID <- as.data.frame(expand.grid(subregion.name=subregion.levels, standtype.name=standtype.levels, ageclass=ageclass.levels, tpr.name=tpr.levels))
+
+mastermatrix.ForID$ForestID <- paste(mastermatrix.ForID$subregion.name, mastermatrix.ForID$standtype.name, mastermatrix.ForID$ageclass, mastermatrix.ForID$tpr.name, sep=".")
+
+write.table(mastermatrix.ForID, "rawData/mastermatrix.ForID.csv", sep=",", row.names = F, col.names = T)
+```
+
+There are `r length(unique(mastermatrix.ForID$ForestID))` unique theoretically possible stand types. 
+
+Subset the AVI database to only those  ForestIDs that exist in the mastermatrix table
+
+``` {r remove.stands.with.missing.info}
+avi.clean <- subset(ariskmatrixAVI.A, subset=ariskmatrixAVI.A$ForestID %in% mastermatrix.ForID$ForestID)
+
+length(unique(avi.clean$ForestID)) # double check that we have the correct number of ForID. Will probably be less than the number of rows in the mastermatrix.forid file
+
+nrow(avi.clean)
+
+head(avi.clean)
+```
+
+Write avi.clean to a csv file so we don't need to re-clean it each time
+
+``` {r}
+write.table(avi.clean, "rawData/avi.validStandsOnly.csv", sep=",", row.names = F, col.names = T)
+```
+
+## Step 4. Quality check the ranks... 
+
+Now that we've eliminated the stands that are missing attributes necessary for ranking, all stands should either have a rank or be NA (if they don't exist. )
+
+``` {r check.ranks}
+unique(avi.clean$Rating)
+
+```
+
+We shouldn't have any 999 or 0 ranks, so let's examine those. 
+
+``` {r}
+na.ranks <- avi.clean[is.na(avi.clean$Rating),]
+head(na.ranks)
+
+weird.ranks <- avi.clean[avi.clean$Rating %in% c("999", "0"),]
+head(weird.ranks)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Step 4. Summarize cumulative area, ranks, and relative sampling effort to date within each combination of subregion, stand type, age class, and timber productivity rating
+
+We will use the *dplyr* package in R to summarize total area for each potential combination of these 4 factors.
+
+```{r summarize-area-and-create-ranks-list, echo=FALSE}
+AlbertaForID_Ranks_final_long<-avi.clean%>%
   group_by(ForestID,Rating)%>%
   summarize(ForestArea=sum(Shape_Area)/10000)
+
+head(AlbertaForID_Ranks_final_long)
+
 AlbertaForID_Ranks_final_long$ForestArea[is.na(AlbertaForID_Ranks_final_long$ForestArea)]<-0 #replace NAs
+
 write.csv(AlbertaForID_Ranks_final_long, file="Output/AlbertaForID_Ranks_final_long.csv")
 #Calculates cumulative area in risk matrix AVI geodatabase within each combination of subregion, stand, age class, and TPR, and ForestID ranking.
 ```
