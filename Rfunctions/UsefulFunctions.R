@@ -9,6 +9,7 @@ require(ggplot2)
 require(reshape2)
 require(stringr)
 require(RColorBrewer)
+require(dplyr)
 
 
 #-------------------  MyFacetTheme  ----------------------------------
