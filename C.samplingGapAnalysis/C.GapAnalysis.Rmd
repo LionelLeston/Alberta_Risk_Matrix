@@ -31,15 +31,15 @@ same summary will provide the basis for a gap analysis.
 
 ## Gap Analysis. Add survey effort to the risk matrix AVI attribute table in ArcGIS to create one-pagers and maps of survey effort.
 
-The file that was used to create the Alberta master matrix can also be used to create a  *GapAnalysisSurveyEffortPerForestID* document for a gap analysis report. Then the  *GapAnalysisSurveyEffortPerForestID* file can be spatially joined to the risk matrix AVI in ArcGIS, using ForestID to link survey effort to the attribute table. 
+The file that was used to create the Alberta master matrix, then *AlbertaMasterMatrixB* after further modification, can also be used to create a  *GapAnalysisSurveyEffortPerForestID* document for a gap analysis report. Then the  *GapAnalysisSurveyEffortPerForestID* file can be spatially joined to the risk matrix AVI in ArcGIS, using ForestID to link survey effort to the attribute table. 
 
 Once survey effort has been added to the risk matrix AVI attribute table, it will be possible to select data according to survey effort and draw maps identifying regions where more point count data needs to be collected. These maps can be sent to individual companies as one-pagers describing particular Forest Management Units. Shapefiles extracted from the risk matrix AVI but now containing survey effort for particular ForestIDs can be sent to forestry companies that have contributed to FORSITE's risk matrix via FRIAA. Examples of such one-pagers could be linked to this Markdown document eventually, but only with permission from the forestry companies.
 
 The data can be reformatted separately in Excel to make the risk matrix survey effort Excel file with coloured cells, to go with the gap analysis report.and which was linked to the risk matrix AVI in ArcGIS can also provide us with a master matrix for Alberta, to be linked to the actual individual point counts rather than just the summarized point count totals per ForestID.
 
 ```{r create-Alberta-mastermatrix, echo=FALSE}
-AlbertaMastermatrix<-read.csv("Output/AlbertaMastermatrix.csv", header=TRUE)
-write.csv(AlbertaMastermatrix, file="C.samplingGapAnalysis/GapAnalysisSurveyEffortPerForestID.csv")
-
+AlbertaMastermatrixB<-read.csv("Output/AlbertaMastermatrixB.csv", header=TRUE)
+write.csv(AlbertaMastermatrixB, file="C.samplingGapAnalysis/GapAnalysisSurveyEffortPerForestID.csv")
+#separate file created for gap analysis from the one that will be further analyzed
 ```
 

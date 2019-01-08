@@ -1,7 +1,7 @@
 ---
 title: "A.GetData.CreateAlbertaMasterMatrixAndRanksMatrix"
 author: "Lionel Leston"
-date: "December 4, 2018"
+date: "December 19, 2018"
 output: word_document
 ---
 
@@ -81,7 +81,7 @@ There are `r nrow(riskmatrixAVI.A)` rows/observations in the data frame, so all 
 
 # Nicole left off here on November 9th 
 
-## Question to resolve: why are there twice as many polygons in the matrix AVI than in the basic AVI (RESOLVED)?
+## Question to resolve: why are there twice as many polygons in the matrix AVI than in the basic AVI (RESOLVED)
 There are twice as many polygons in the risk matrix AVI as the basic composite AVI due to the addition of more recent harvest blocks and fires setting back age.
 
 
@@ -292,7 +292,7 @@ I manually converted it to long format in *areabyForestID* prior to adding bird 
 
 Now add the bird data. For subregions other than CentralMixedwood (which was missing polygons in the combined R data frames back in May), total point counts per combination of subregion, stand, age class, and TPR are the same as those summed back in May.
 
-At this point Area.1000 (area in 1000-ha units) and survey effort can be calculated. 
+At this point Area.1000 (area in 1000-ha units) and survey effort can be calculated. The file is then stored in the Output folder since it is based on output data.
 
 ## Step 4. Creating the Alberta Master Matrix
 
@@ -303,19 +303,30 @@ The mastermatrix will be saved to an RData file and cleaned up prior to using it
 #Recast by ForestID
 pointcountsformatrix<-read.csv("rawData/pointsCdatacheckMay23.csv", header=TRUE)
 pointcountsformatrix$ForestID<-paste0(pointcountsformatrix$subregion.name,".",pointcountsformatrix$standtype.name,".",pointcountsformatrix$ageclass,".",pointcountsformatrix$tpr.name)
-pointsbyForestID<-tapply(pointcountsformatrix$counter, pointcountsformatrix$ForestID, sum)
-write.csv(pointsbyForestID, file = "Output/pointsbyForestID.csv")
-#Used Data to Columns in Excel to split ForestID back into separate columns.
-#matched up column categories from separate files in Excel, using the values in "pointsbyForestID"
 
-pointsbyForestID<-read.csv("A.dataQualityChecking/pointsbyForestID.csv", header=TRUE)
+pointsbyForestID<-tapply(pointcountsformatrix$counter, pointcountsformatrix$ForestID, sum)
+
+write.csv(pointsbyForestID, file = "Output/pointsbyForestID.csv")
+#write to CSV then read in again
+pointsbyForestID<-read.csv("Output/pointsbyForestID.csv", header=TRUE)
+
 pointsbyForestID$ForestID<-pointsbyForestID$X
 pointsbyForestID$X<-NULL
 pointsbyForestID$Count<-pointsbyForestID$x
 pointsbyForestID$x<-NULL
-areabyForestID<-read.csv("A.dataQualityChecking/areabyForestID.csv", header=TRUE)
-AlbertaMastermatrix<-merge(pointsbyForestID, areabyForestID, by=c("ForestID"), all=TRUE)
-AlbertaMastermatrix$Area.1000units<-AlbertaMastermatrix$Area/1000
+
+pointsbyForestID<-merge(pointcountsformatrix[,c("ForestID", "subregion.name", "standtype.name", "ageclass", "tpr.name")], pointsbyForestID)
+
+write.csv(pointsbyForestID, file = "Output/pointsbyForestID.csv")
+#Used Data to Columns in Excel to split ForestID back into separate columns.
+#matched up column categories from separate files in Excel, using the values in "pointsbyForestID"
+
+pointsbyForestID<-read.csv("Output/pointsbyForestID.csv", header=TRUE)
+
+areabyForestID<-read.csv("Output/areabyForestID_Nov20.csv", header=TRUE)
+#use the most recent version, which shows the difference in area calculated from the AVI before we realized that Forsite personnel who prepared the AVI did not recalculate areas after adding recent cutblocks and burns
+AlbertaMastermatrix<-merge(pointsbyForestID, areabyForestID, by=c("ForestID","subregion.name","standtype.name","ageclass","tpr.name"), all=TRUE)
+AlbertaMastermatrix$Area.1000units<-AlbertaMastermatrix$AreaNov20/1000
 AlbertaMastermatrix$SurveyEffort<-AlbertaMastermatrix$Count/AlbertaMastermatrix$Area.1000units
 AlbertaMastermatrix$Count[is.na(AlbertaMastermatrix$Count)]<-0
 AlbertaMastermatrix$SurveyEffort[is.na(AlbertaMastermatrix$SurveyEffort)]<-0

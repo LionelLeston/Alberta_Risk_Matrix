@@ -52,37 +52,40 @@ load("RDataFiles/AlbertaMastermatrix.RData")
 kable(head(AlbertaMastermatrix, 10), row.names = F)
 
 #Use lookup tables to add abbreviated variable categories to mastermatrix
-LOOKUP.Subregion<-read.csv("rawData/LOOKUP.Subregion.csv", header=TRUE)
+LOOKUP.Subregion<-read.csv("lookup/LOOKUP.Subregion.csv", header=TRUE)
 #add abbreviated subregion names
-AlbertaMastermatrix<-merge(AlbertaMastermatrix, LOOKUP.Subregion, by=c("subregion.name"), all.x=T)
-LOOKUP.StandType<-read.csv("rawData/LOOKUP.StandType.csv", header=TRUE)
+AlbertaMastermatrixB1<-merge(AlbertaMastermatrix, LOOKUP.Subregion, by=c("subregion.name"), all.x=T)
+LOOKUP.StandType<-read.csv("lookup/LOOKUP.StandType.csv", header=TRUE)
 #add abbreviated stand type and coarse forest type names
-AlbertaMastermatrix<-merge(AlbertaMastermatrix, LOOKUP.StandType, by=c("standtype.name"), all.x=T)
+AlbertaMastermatrixB2<-merge(AlbertaMastermatrixB1, LOOKUP.StandType, by=c("standtype.name"), all.x=T)
 #add abbreviated age class names
-LOOKUP.ForestAge<-read.csv("rawData/LOOKUP.ForestAge.csv", header=TRUE)
-AlbertaMastermatrix<-merge(AlbertaMastermatrix, LOOKUP.ForestAge, by=c("ageclass"), all.x=T)
+LOOKUP.ForestAge<-read.csv("lookup/LOOKUP.ForestAge.csv", header=TRUE)
+AlbertaMastermatrixB3<-merge(AlbertaMastermatrixB2, LOOKUP.ForestAge, by=c("ageclass"), all.x=T)
+LOOKUP.TimberProd<-read.csv("lookup/LOOKUP.TimberProd.csv", header=TRUE)
+AlbertaMastermatrixB<-merge(AlbertaMastermatrixB3, LOOKUP.TimberProd, by=c("tpr.name"), all.x=T)
 #add alternate name for ForestID
-AlbertaMastermatrix$matrix.forest.class<-AlbertaMastermatrix$ForestID
+AlbertaMastermatrixB$matrix.forest.class<-AlbertaMastermatrixB$ForestID
 
-matrix.qs <- AlbertaMastermatrix#quicksaves AlbertaMastermatrix up to this point
+matrix.qs <- AlbertaMastermatrixB#quicksaves AlbertaMastermatrixB4 up to this point
 
-write.csv(AlbertaMastermatrix, file="RDataFiles/AlbertaMastermatrix.csv")
-save(AlbertaMastermatrix, file="RDataFiles/AlbertaMastermatrix.Rdata")
+write.csv(AlbertaMastermatrixB, file="Output/AlbertaMastermatrixB.csv")
+save(AlbertaMastermatrixB, file="RDataFiles/AlbertaMastermatrixB.Rdata")
+#saved under a new name, so that if errors are made, original master matrix doesn't have to be recreated.
 ```
 
 ####2. summary of master matrix
 
-Number of subregions: `r length(unique(AlbertaMastermatrix$subregion.name))`
+Number of subregions: `r length(unique(AlbertaMastermatrixB$subregion.name))`
 
-Number of stand types: `r length(unique(AlbertaMastermatrix$standtype.name))`
+Number of stand types: `r length(unique(AlbertaMastermatrixB$standtype.name))`
 
-Number of age classes: `r length(unique(AlbertaMastermatrix$ageclass))`
+Number of age classes: `r length(unique(AlbertaMastermatrixB$ageclass))`
 
-Number of timber productivity classes: `r length(unique(AlbertaMastermatrix$tpr.name))`
+Number of timber productivity classes: `r length(unique(AlbertaMastermatrixB$tpr.name))`
 
-Number of ForestID combinations that are in the risk matrix: `r length(unique(AlbertaMastermatrix$ForestID))`
+Number of ForestID combinations that are in the risk matrix: `r length(unique(AlbertaMastermatrixB$ForestID))`
 
-####3. Load "ranks" file, then reformat ForestID column in "ranks" to match ForestID column in AlbertaMastermatrix and get rid of unranked stands
+####3. Load "ranks" file, then reformat ForestID column in "ranks" to match ForestID column in AlbertaMastermatrixB and get rid of unranked stands
 
 Contains stand ranks assigned to ForestID. Note that ranks were previously quality-checked. These are the final ranks. 
 
@@ -99,12 +102,12 @@ ranks$Rating[ranks$Rating=="Unranked"]<-"NA"
 ranks$Rating[ranks$Rating=="Unranked"]<-"NA"
 ranks<-ranks[!is.na(ranks$Rating),]
 ranks$FinalRank <-as.numeric(ranks$Rating) 
-write.csv(ranks, file="ReducedAlbertaForID_Ranks_final_long.csv")
+write.csv(ranks, file="Output/ReducedAlbertaForID_Ranks_final_long.csv")
 kable(head(ranks, 10))
 kable(t(table(ranks$FinalRank)))
 ```
 
-The ForestID column in "ranks" previously needed to be formatted to match up with the ForestID column in "AlbertaMastermatrix". For some reason it doesn't now, since October 16, but keep the chunk below just in case the issue comes up when importing the risk matrix AVI or ranks again.
+The ForestID column in "ranks" previously needed to be formatted to match up with the ForestID column in "AlbertaMastermatrix(B)". For some reason it doesn't now, since October 16, but keep the chunk below just in case the issue comes up when importing the risk matrix AVI or ranks again.
 
 ``` {r}
 #ranks$ForestID<-gsub("DryMixedwood", "Dry Mixedwood", ranks$ForestID)
@@ -143,6 +146,8 @@ The ForestID column in "ranks" previously needed to be formatted to match up wit
 
 ####4. Load point count data and reformat ForestID to match AlbertaMastermatrix
 
+Previously in script A, we used the point counts to get the number of points for each type of forest matrix class. Now in script B, we are going to merge the actual point counts and their offsets with the risk matrix AVI data associated with each point count.
+
 ```{r merge.pointcountloc.data, echo=T, eval=T}
 countdata<-read.csv("rawData/AlbertaPointCountsAndOffsetsfromhabitatcategoriesAug16.csv",header=T)#counts of individual species, offsets for individual species, habitat, footprint data per PKEY and SS (as of Aug.16, 2018)
 extractedtocount<-read.csv("rawData/AlbertapointsCdatacheckMay23.csv",header=T)#ForestID data extracted to SS back in May 2018
@@ -150,7 +155,7 @@ extractedtocount<-extractedtocount[,c("SS","ForestID")]#minimize variables from 
 merged2gether<-merge(countdata, extractedtocount, by=c("SS"), all=T)
 write.csv(merged2gether, file="Output/merged2gether.csv")#data check
 
-#now reformat ForestID to match formatting in AlbertaMastermatrix
+#now reformat ForestID to match formatting in AlbertaMastermatrixB
 #For some reason, this next section is no longer necessary? Not sure it ever was.
 #merged2gether$ForestID<-gsub("DryMixedwood", "Dry Mixedwood", merged2gether$ForestID)
 #merged2gether$ForestID<-gsub("AthabascaPlainALPAC", "Athabasca Plain ALPAC", merged2gether$ForestID)

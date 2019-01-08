@@ -46,33 +46,41 @@ The master matrix is a data frame summarizing the cumulative area and number of 
 
 ```{r load.matrixTemplate, echo=T, eval=T}
 #load(paste0(path,"RDataFiles/AlbertaMastermatrix.RData"))
-load("RDataFiles/AlbertaMastermatrix.RData")
-kable(head(AlbertaMastermatrix, 10), row.names = F)
+load("RDataFiles/AlbertaMastermatrixB.RData")
+kable(head(AlbertaMastermatrixB, 10), row.names = F)
 
-AlbertaMastermatrix$ageclass<-factor(AlbertaMastermatrix$ageclass, levels=c("Age 3-30 Y", "Age 31-60 Y", "Age 61-80 Y", "Age #81-100 Y", "Age 101-140 Y", "Age 141+"))
-levels(AlbertaMastermatrix$ageclass)#reorder levels
+AlbertaMastermatrixB$ageclass<-factor(AlbertaMastermatrixB$ageclass, levels=c("Age 3-30 Y", "Age 31-60 Y", "Age 61-80 Y", "Age 81-100 Y", "Age 101-140 Y", "Age 141+"))
+levels(AlbertaMastermatrixB$ageclass)#reorder levels
 
-AlbertaMastermatrix$tpr.name<-factor(AlbertaMastermatrix$tpr.name, levels=c("Unproductive", "Fair", "Medium", "Good"))
-levels(AlbertaMastermatrix$tpr.name)#reorder levels 
+AlbertaMastermatrixB$tpr.name<-factor(AlbertaMastermatrixB$tpr.name, levels=c("Unproductive", "Fair", "Medium", "Good"))
+levels(AlbertaMastermatrixB$tpr.name)#reorder levels 
 
-AlbertaMastermatrix$subregion.name <- factor(AlbertaMastermatrix$subregion.name, levels=c("Alpine_Subalpine","AthabascaPlainALPAC","BorealSubarctic","CentralMixedwood","DryMixedwood","LowerBorealHighlands","LowerFoothills","Montane","NorthernMixedwood","UpperBorealHighlands","UpperFoothills","0"))
-levels(AlbertaMastermatrix$subregion.name)
-AlbertaMastermatrix<-AlbertaMastermatrix[!AlbertaMastermatrix$subregion.name==0,]
+AlbertaMastermatrixB$subregion.name <- factor(AlbertaMastermatrixB$subregion.name, levels=c("Alpine_Subalpine","AthabascaPlainALPAC","BorealSubarctic","CentralMixedwood","DryMixedwood","LowerBorealHighlands","LowerFoothills","Montane","NorthernMixedwood","UpperBorealHighlands","UpperFoothills","0"))
+levels(AlbertaMastermatrixB$subregion.name)
+AlbertaMastermatrixB$subregion.name[AlbertaMastermatrixB$subregion.name=="0",]<-"NA"
+
+#is.na(AlbertaMastermatrixB$subregion.name) <- AlbertaMastermatrixB$subregion.name == "0"
+AlbertaMastermatrixB<-AlbertaMastermatrixB[!is.na(AlbertaMastermatrixB$subregion.name),]
+levels(AlbertaMastermatrixB$subregion.name)
 #reorder levels
 
 
-AlbertaMastermatrix$standtype.name <- factor(AlbertaMastermatrix$standtype.name, levels=c("Mixedwood_conifer","Mixedwood_decid","Mixedwood_decidPl","Mixedwood_decidSb","Mixedwood_decidSw","Mixedwood_Pl","Mixedwood_Sb","Mixedwood_Sw","pureBlackSpruce","pureConifer_allcon","pureConifer_Pl","pureConifer_Sx","PureHardwood","PurePine","pureWhiteSpruce","0")) # eliminates missing speciesgroup levels
+AlbertaMastermatrixB$standtype.name <- factor(AlbertaMastermatrixB$standtype.name, levels=c("Mixedwood_conifer","Mixedwood_decid","Mixedwood_decidPl","Mixedwood_decidSb","Mixedwood_decidSw","Mixedwood_Pl","Mixedwood_Sb","Mixedwood_Sw","pureBlackSpruce","pureConifer_allcon","pureConifer_Pl","pureConifer_Sx","PureHardwood","PurePine","pureWhiteSpruce","0")) # eliminates missing speciesgroup levels
+levels(AlbertaMastermatrixB$standtype.name)
+AlbertaMastermatrixB$standtype.name[AlbertaMastermatrixB$standtype.name=="0"]<-"NA"
+AlbertaMastermatrixB<-AlbertaMastermatrixB[!is.na(AlbertaMastermatrixB$standtype.name),]
+levels(AlbertaMastermatrixB$standtype.name)
 #reorder levels
 
-AlbertaMastermatrix$standtype.abbrev <- factor(AlbertaMastermatrix$standtype.abbrev, levels=c("C-all","C-Pl","D","MW-C","MW-D","MW-D-Pl","MW-D-Sb","MW-D-Sw","MW-Pl","MW-Sb","MW-Sw","Sb","Sw","UnID")) # eliminates missing speciesgroup levels
+AlbertaMastermatrixB$standtype.abbrev <- factor(AlbertaMastermatrixB$standtype.abbrev, levels=c("C-all","C-Pl","D","MW-C","MW-D","MW-D-Pl","MW-D-Sb","MW-D-Sw","MW-Pl","MW-Sb","MW-Sw","Sb","Sw","UnID")) # eliminates missing speciesgroup levels
 #reorder levels
 
 
-AlbertaMastermatrix$subregion.abbrev <- factor(AlbertaMastermatrix$subregion.abbrev, levels=c("AlpSub", "AthPla", "BorSub", "CenMix", "DryMix", "LowBorHig", "LowFoo", "Mon", "NorMix", "UppBorHig", "UppFoo", "UnID")) # eliminates missing speciesgroup levels
+AlbertaMastermatrixB$subregion.abbrev <- factor(AlbertaMastermatrixB$subregion.abbrev, levels=c("AlpSub", "AthPla", "BorSub", "CenMix", "DryMix", "LowBorHig", "LowFoo", "Mon", "NorMix", "UppBorHig", "UppFoo", "UnID")) # eliminates missing speciesgroup levels
 #reorder levels
 
 
-matrix.qs <- AlbertaMastermatrix#quicksaves AlbertaMastermatrix up to this point
+matrix.qs <- AlbertaMastermatrixB#quicksaves AlbertaMastermatrix up to this point
 
 #I haven't resaved RData file to avoid repeating these operations because I
 #may still need to repeat this script in future, and I could screw up the 
@@ -81,15 +89,15 @@ matrix.qs <- AlbertaMastermatrix#quicksaves AlbertaMastermatrix up to this point
 
 ####2. summary of master matrix
 
-Number of subregions: `r length(unique(AlbertaMastermatrix$subregion.name))`
+Number of subregions: `r length(unique(AlbertaMastermatrixB$subregion.name))`
 
-Number of stand types: `r length(unique(AlbertaMastermatrix$standtype.name))`
+Number of stand types: `r length(unique(AlbertaMastermatrixB$standtype.name))`
 
-Number of age classes: `r length(unique(AlbertaMastermatrix$ageclass))`
+Number of age classes: `r length(unique(AlbertaMastermatrixB$ageclass))`
 
-Number of timber productivity classes: `r length(unique(AlbertaMastermatrix$tpr.name))`
+Number of timber productivity classes: `r length(unique(AlbertaMastermatrixB$tpr.name))`
 
-Number of ForestID combinations that are in the risk matrix: `r length(unique(AlbertaMastermatrix$ForestID))`
+Number of ForestID combinations that are in the risk matrix: `r length(unique(AlbertaMastermatrixB$ForestID))`
 
 ####3. ranks
 
@@ -294,7 +302,7 @@ mastermatrix.Factor.noNA <- mastermatrix.Factor[!is.na(mastermatrix.Factor$Final
 #### Get an overall idea of the distribution of ranks among Natural Subregions
 
 ``` {r, Fig.Rank_BEC1, fig.height=5, fig.width=5, dpi=150}
-ggplot(mastermatrix.Factor.noNA, aes(x=subregion.name, y=FinalRank, col=FinalRank)) + geom_jitter(alpha=0.5,  position=position_jitter(height=0.1, width=0.2)) + myfacettheme1 + ylab("Stand Rank") + scale_color_manual(values=palrank) + guides(colour=FALSE)
+ggplot(mastermatrix.Factor.noNA, aes(x=subregion.name, y=FinalRank, col=FinalRank)) + geom_jitter(alpha=0.5,  position=position_jitter(height=0.1, width=0.2)) + myfacettheme1 + xlab("Natural Subregion")+ ylab("Stand Rank") + scale_color_manual(values=palrank) + guides(colour=FALSE)
 ```
 
 ####Understand how ranks are distributed among Natural Subregions
@@ -340,7 +348,7 @@ ggplot(rank_counts_subregion, aes(x=as.numeric(as.character(FinalRank)), y=Numbe
 ```
 
 ``` {r, Fig.Rank_Bec6, fig.height=6, fig.width=9, dpi=200}
-ggplot(area.rank_subregion, aes(x=as.numeric(as.character(FinalRank)), y=Area10000s, fill=Subregion)) + geom_bar(stat="identity", position=position_dodge(width=0.8), width=0.8, col="black") + scale_fill_manual(values=palsub, name="Subregion", guide=FALSE) + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Forest Area (10,000s of ha)") + myfacettheme3 + geom_text(aes(label=Subregion), position=position_dodge(width=0.8), vjust=0.4, hjust=-0.1, angle=90, size=3) + xlab("Stand Rank") + ylim(0, 120)
+ggplot(area.rank_subregion, aes(x=as.numeric(as.character(FinalRank)), y=Area10000s, fill=Subregion)) + geom_bar(stat="identity", position=position_dodge(width=0.8), width=0.8, col="black") + scale_fill_manual(values=palsub, name="Subregion", guide=FALSE) + scale_x_continuous(labels=c(1:6), breaks=1:6) + ylab("Forest Area (10,000s of ha)") + myfacettheme3 + geom_text(aes(label=Subregion), position=position_dodge(width=0.8), vjust=0.4, hjust=-0.1, angle=90, size=3) + xlab("Stand Rank") + ylim(0, 130)
 ```
 
 
