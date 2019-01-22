@@ -49,28 +49,38 @@ The master matrix is a data frame summarizing the cumulative area and number of 
 load("RDataFiles/AlbertaMastermatrixB.RData")
 kable(head(AlbertaMastermatrixB, 10), row.names = F)
 
-AlbertaMastermatrixB$ageclass<-factor(AlbertaMastermatrixB$ageclass, levels=c("Age 3-30 Y", "Age 31-60 Y", "Age 61-80 Y", "Age 81-100 Y", "Age 101-140 Y", "Age 141+"))
-levels(AlbertaMastermatrixB$ageclass)#reorder levels
-
-AlbertaMastermatrixB$tpr.name<-factor(AlbertaMastermatrixB$tpr.name, levels=c("Unproductive", "Fair", "Medium", "Good"))
-levels(AlbertaMastermatrixB$tpr.name)#reorder levels 
-
-AlbertaMastermatrixB$subregion.name <- factor(AlbertaMastermatrixB$subregion.name, levels=c("Alpine_Subalpine","AthabascaPlainALPAC","BorealSubarctic","CentralMixedwood","DryMixedwood","LowerBorealHighlands","LowerFoothills","Montane","NorthernMixedwood","UpperBorealHighlands","UpperFoothills","0"))
-levels(AlbertaMastermatrixB$subregion.name)
-AlbertaMastermatrixB$subregion.name[AlbertaMastermatrixB$subregion.name=="0",]<-"NA"
-
-#is.na(AlbertaMastermatrixB$subregion.name) <- AlbertaMastermatrixB$subregion.name == "0"
+#get rid of unknown stand and subregion, save to new file then reorder levels from this new file.
+is.na(AlbertaMastermatrixB$subregion.name) <- AlbertaMastermatrixB$subregion.name == "0"
 AlbertaMastermatrixB<-AlbertaMastermatrixB[!is.na(AlbertaMastermatrixB$subregion.name),]
-levels(AlbertaMastermatrixB$subregion.name)
-#reorder levels
+#observations reduced by removing NA values
+is.na(AlbertaMastermatrixB$standtype.name) <- AlbertaMastermatrixB$standtype.name == "0"
+AlbertaMastermatrixC<-AlbertaMastermatrixB[!is.na(AlbertaMastermatrixB$standtype.name),]
+#observations reduced by removing NA values
+write.csv(AlbertaMastermatrixC, file="Output/AlbertaMastermatrixC.csv")
+save(AlbertaMastermatrixC, file="RDataFiles/AlbertaMastermatrixC.Rdata")
+#saved under a new name, so that new files will not have the "0" stand and subregion levels
+
+load("RDataFiles/AlbertaMastermatrixC.RData")
+kable(head(AlbertaMastermatrixC, 10), row.names = F)
+
+AlbertaMastermatrixC$ageclass<-factor(AlbertaMastermatrixC$ageclass, levels=c("Age 3-30 Y", "Age 31-60 Y", "Age 61-80 Y", "Age 81-100 Y", "Age 101-140 Y", "Age 141+"))
+levels(AlbertaMastermatrixC$ageclass)#reorder levels
+
+AlbertaMastermatrixC$tpr.name<-factor(AlbertaMastermatrixC$tpr.name, levels=c("Unproductive", "Fair", "Medium", "Good"))
+levels(AlbertaMastermatrixC$tpr.name)#reorder levels 
+
+AlbertaMastermatrixC$subregion.name <- factor(AlbertaMastermatrixC$subregion.name, levels=c("Alpine_Subalpine","AthabascaPlainALPAC","BorealSubarctic","CentralMixedwood","DryMixedwood","LowerBorealHighlands","LowerFoothills","Montane","NorthernMixedwood","UpperBorealHighlands","UpperFoothills"))
+levels(AlbertaMastermatrixC$subregion.name)
 
 
-AlbertaMastermatrixB$standtype.name <- factor(AlbertaMastermatrixB$standtype.name, levels=c("Mixedwood_conifer","Mixedwood_decid","Mixedwood_decidPl","Mixedwood_decidSb","Mixedwood_decidSw","Mixedwood_Pl","Mixedwood_Sb","Mixedwood_Sw","pureBlackSpruce","pureConifer_allcon","pureConifer_Pl","pureConifer_Sx","PureHardwood","PurePine","pureWhiteSpruce","0")) # eliminates missing speciesgroup levels
-levels(AlbertaMastermatrixB$standtype.name)
-AlbertaMastermatrixB$standtype.name[AlbertaMastermatrixB$standtype.name=="0"]<-"NA"
+AlbertaMastermatrixC$standtype.name <- factor(AlbertaMastermatrixC$standtype.name, levels=c("Mixedwood_conifer","Mixedwood_decid","Mixedwood_decidPl","Mixedwood_decidSb","Mixedwood_decidSw","Mixedwood_Pl","Mixedwood_Sb","Mixedwood_Sw","pureBlackSpruce","pureConifer_allcon","pureConifer_Pl","pureConifer_Sx","PureHardwood","PurePine","pureWhiteSpruce")) # eliminates missing speciesgroup levels
+levels(AlbertaMastermatrixC$standtype.name)
+
+is.na(AlbertaMastermatrixB$standtype.name) <- AlbertaMastermatrixB$standtype.name == "0"
 AlbertaMastermatrixB<-AlbertaMastermatrixB[!is.na(AlbertaMastermatrixB$standtype.name),]
+#observations reduced by removing NA values
 levels(AlbertaMastermatrixB$standtype.name)
-#reorder levels
+#reorder levels: "0" factor level still present
 
 AlbertaMastermatrixB$standtype.abbrev <- factor(AlbertaMastermatrixB$standtype.abbrev, levels=c("C-all","C-Pl","D","MW-C","MW-D","MW-D-Pl","MW-D-Sb","MW-D-Sw","MW-Pl","MW-Sb","MW-Sw","Sb","Sw","UnID")) # eliminates missing speciesgroup levels
 #reorder levels

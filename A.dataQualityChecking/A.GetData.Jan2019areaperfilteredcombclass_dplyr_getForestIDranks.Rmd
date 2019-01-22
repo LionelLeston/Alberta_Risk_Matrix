@@ -1,0 +1,416 @@
+---
+title: "A.GetData.CreateAlbertaMasterMatrixAndRanksMatrix"
+author: "Lionel Leston"
+date: "October 6, 2018"
+output: word_document
+---
+
+```{r setup, echo=F, message=F, warning=F}
+require(knitr)
+opts_knit$set(root.dir = '..')
+knitr::opts_chunk$set(
+  fig.path = "figures/"
+)
+rm(list=ls()); gc()
+getwd()
+```
+
+``` {r usefulfunc, echo=F}
+source("Rfunctions/UsefulFunctions.R")
+```
+
+## R Markdown
+This document describes how to get the GIS data from the risk matrix provided by FORSITE and the point counts collated by the Boreal Avian Modelling Project (BAM) in Alberta. 
+
+Polygons in the risk matrix tool are represented within different combinations of Natural Subregion, Stand Type, Age Class, and Timber Productivity Rating outlined in the risk matrix (v. 3) of incidental take by forestry operations, created by FORSITE for FRIAA (the Forestry Resource Inventory Association of Alberta). 
+
+The GIS data will be used to make the master matrix that is combined with point count data in R, for both exploring the data and to validate the risk matrix. The data have also been used to create a gap analysis to describe ForestID combinations that have little or no point count representation.  
+
+The most recent version of this analysis was run in September, and includes the creation of an AlbertaMastermatrix containing observations of cumulative area, subregion, stand, age-class, and timber productivity rating for each ForestID, and a separate list of risk matrix ranks for each ForestID. 
+
+## Background work done before it came to U of A
+
+* Creation of matrix and ranks of matrix stand classes identified in that matrix - see **INSERT DOCUMENT FILENAME**
+* Translation of that matrix into a spatial file - see **PROJECT REPORT FROM FORSITE**
+
+## Background work done by U of A folks before switching over to R
+
+The first part of creating the risk matrix is done in ArcGIS. 
+
+We received two geodatabases from Forsite. Please note there is a data sharing agreement associated with these geodatabases. They cannot be used for anything other than the matrix work, and they cannot be shared with other parties. 
+
+#### 1. mbca_avi.gdb
+
+``` {r}
+mbca_avi <- read.csv("rawData/AVI_1rowexport.csv", header=T)
+```
+
+Has 1 layer, AVI, that contains `r length(colnames(mbca_avi))` rows: `r colnames(mbca_avi)`.
+Does not contain information about the derived matrix ranks. 
+Attribute table has 3,118,203 rows.
+
+#### 2. avi_analysis.gdb
+
+Has 5 layers. We used **AVI_Analysis_matrixV3**
+It has 6120960 records/polygons. 
+
+##### Processing done in ArcMap
+
+*1. Calculate area*
+
+While this layer has a "Shape_Area" field, we don't know the origin of this field. So we calculated polygon areas ourselves, following [these directions](https://www.gislounge.com/calculating-polygon-area-in-arcmap/). 
+
+
+*2.Recalculate age of forest stand?*
+
+For some reason, I can't easily combine MOD1YR or ORIGINYR from the detailed AVI geodatabase, so the age-structure calculated here is as of 2017. Probably not an issue, just that the age structure as of 2017 is different from what would have been present when surveys were actually being done.
+
+*3. Other stuff?*
+
+We exported the attribute table to a CSV file for use in R.
+
+
+## Step 1. Load data into R
+
+Load single CSV file with all records exported from *AVI_Analysis_matrixV3* layer in the *avi_analysis.gdb*
+
+```{r load, echo=FALSE}
+ariskmatrixAVI.A <- read.csv("rawData/AVI_Analysis_matrixV3.csv", header=T, stringsAsFactors = F)
+nrow(ariskmatrixAVI.A)
+str(ariskmatrixAVI.A)
+```
+
+There are `r nrow(riskmatrixAVI.A)` rows/observations in the data frame, so all records from the the entire risk matrix AVI attribute table has been loaded into R.
+
+## Question to resolve: why are there twice as many polygons in the matrix AVI than in the basic AVI?
+
+We resolved this issue in November 2018 with Jeremy Beal at FORSITE.
+The mbca.avi contains just the AVI-defined forest polygons. In the FORSITE risk matrix AVI, more recent fires and cutblocks were added, splitting the polygons into more.
+
+## Step 2. Create age classes in R based on age since stand origin
+
+In the AVI file, age is continuous. However, the matrix required a categorical variable. Age classes were intended to be  meaningful for both foresters and  breeding birds.
+
+In exploring the age variable, we saw that some forest stand ages were "9999" a commonly used indicator for "NA". So the below ifelse statement(s) reclass the continuous AGE_2017 column into age classes and NA. 
+
+```{r get-age-classes, echo=FALSE}
+ariskmatrixAVI.A$ageclass<-{ifelse(ariskmatrixAVI.A$AGE_2017==9999,"NA",
+                            ifelse(ariskmatrixAVI.A$AGE_2017 <3,"Age 0-2 Y",
+                              ifelse(ariskmatrixAVI.A$AGE_2017 <31,"Age 3-30 Y",
+                                ifelse(ariskmatrixAVI.A$AGE_2017 <61,"Age 31-60 Y",                                
+                                  ifelse(ariskmatrixAVI.A$AGE_2017 <81,"Age 61-80 Y",
+                                    ifelse(ariskmatrixAVI.A$AGE_2017 <101,"Age 81-100 Y",
+                                      ifelse(ariskmatrixAVI.A$AGE_2017 <141,"Age 101-140 Y","Age 141+")))))))
+}
+```
+
+## Step 4. Create master matrix and filter out invalid forest stand types. 
+
+We first create a list of ranks for each ForestID. ForestID is created by concatenating the subregion name, stand name, age class, and timber productivity rating. Note that some polygons assigned to the same ForestID may be assigned different ranks with some ranked from 1 to 6 and others ranked as 0, NA, or 999.
+
+``` {r create.new.columns.createForID}
+ariskmatrixAVI.A$subregion.name<-ariskmatrixAVI.A$NaturalSubRegion
+ariskmatrixAVI.A$standtype.name<-ariskmatrixAVI.A$StandType
+ariskmatrixAVI.A$tpr.name<-ariskmatrixAVI.A$TPR
+
+#Create ForID
+ariskmatrixAVI.A$ForestID<-paste0(ariskmatrixAVI.A$subregion.name,".",ariskmatrixAVI.A$standtype.name,".",ariskmatrixAVI.A$ageclass,".",ariskmatrixAVI.A$tpr.name)
+```
+
+Note that some ForIDs have 0 for Natural Sugregion, or other odd values. These stands are missing attribute information for at least one of the four attributes, and are therefore excluded from the analysis. 
+
+Here we remove those by creating "Master Matrix", the factorial combination of all valid levels of all attribute factors. 
+
+``` {r}
+unique(ariskmatrixAVI.A$subregion.name)
+subregion.levels <- factor(unique(ariskmatrixAVI.A$subregion.name)[2:length(unique(ariskmatrixAVI.A$subregion.name))])
+
+unique(ariskmatrixAVI.A$standtype.name)
+standtype.levels <- factor(unique(ariskmatrixAVI.A$standtype.name)[-which(unique(ariskmatrixAVI.A$standtype.name) == "0")])
+
+unique(ariskmatrixAVI.A$tpr_name)
+tpr.levels <- factor(unique(ariskmatrixAVI.A$tpr.name)[-which(unique(ariskmatrixAVI.A$tpr.name) == "")])
+tpr.levels <- factor(tpr.levels, levels=c("U", "F", "M", "G"))
+
+unique(ariskmatrixAVI.A$ageclass)
+ageclass.levels <- factor(unique(ariskmatrixAVI.A$ageclass)[-which(unique(ariskmatrixAVI.A$ageclass)=="NA")&-which(unique(ariskmatrixAVI.A$ageclass)=="Age 0-2 Y")])
+ageclass.levels <- factor(ageclass.levels, levels=c("Age 3-30 Y","Age 31-60 Y","Age 61-80 Y","Age 81-100 Y","Age 101-140 Y","Age 141+"), ordered=T)
+```
+
+Valid subregion levels: `r subregion.levels`
+Valid stand type levels: `r standtype.levels`
+Valid tpr levels: `r tpr.levels`
+Valid Age class levels: `r ageclass.levels`
+
+Use expand.grid to create a data.frame with the factorial combination of all levels. This is all theoretically possible combinations of the stand attributes. 
+
+``` {r}
+mastermatrix.ForID <- as.data.frame(expand.grid(subregion.name=subregion.levels, standtype.name=standtype.levels, ageclass=ageclass.levels, tpr.name=tpr.levels))
+
+mastermatrix.ForID$ForestID <- paste(mastermatrix.ForID$subregion.name, mastermatrix.ForID$standtype.name, mastermatrix.ForID$ageclass, mastermatrix.ForID$tpr.name, sep=".")
+
+write.table(mastermatrix.ForID, "rawData/mastermatrix.ForID.csv", sep=",", row.names = F, col.names = T)
+```
+
+There are `r length(unique(mastermatrix.ForID$ForestID))` unique theoretically possible stand types. 
+
+Subset the AVI database to only those  ForestIDs that exist in the mastermatrix table
+
+``` {r remove.stands.with.missing.info}
+avi.clean <- subset(ariskmatrixAVI.A, subset=ariskmatrixAVI.A$ForestID %in% mastermatrix.ForID$ForestID)
+
+length(unique(avi.clean$ForestID)) # double check that we have the correct number of ForID. Will probably be less than the number of rows in the mastermatrix.forid file
+
+nrow(avi.clean)
+
+head(avi.clean)
+```
+
+Write avi.clean to a csv file so we don't need to re-clean it each time
+
+``` {r}
+write.table(avi.clean, "rawData/avi.validStandsOnly.csv", sep=",", row.names = F, col.names = T)
+```
+
+## Step 4. Quality check the ranks... 
+
+Now that we've eliminated the stands that are missing attributes necessary for ranking, all stands should either have a rank or be NA (if they don't exist. )
+
+``` {r check.ranks}
+unique(avi.clean$Rating)
+
+```
+
+We shouldn't have any 999 or 0 ranks, so let's examine those. 
+
+``` {r}
+na.ranks <- avi.clean[is.na(avi.clean$Rating),]
+head(na.ranks)
+
+weird.ranks <- avi.clean[avi.clean$Rating %in% c("999", "0"),]
+head(weird.ranks)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Step 4. Summarize cumulative area, ranks, and relative sampling effort to date within each combination of subregion, stand type, age class, and timber productivity rating
+
+We will use the *dplyr* package in R to summarize total area for each potential combination of these 4 factors.
+
+```{r summarize-area-and-create-ranks-list, echo=FALSE}
+AlbertaForID_Ranks_final_long<-avi.clean%>%
+  group_by(ForestID,Rating)%>%
+  summarize(ForestArea=sum(Shape_Area)/10000)
+
+head(AlbertaForID_Ranks_final_long)
+
+AlbertaForID_Ranks_final_long$ForestArea[is.na(AlbertaForID_Ranks_final_long$ForestArea)]<-0 #replace NAs
+
+write.csv(AlbertaForID_Ranks_final_long, file="Output/AlbertaForID_Ranks_final_long.csv")
+#Calculates cumulative area in risk matrix AVI geodatabase within each combination of subregion, stand, age class, and TPR, and ForestID ranking.
+```
+
+In the next part, we use the *dplyr* package to summarize the cumulative area of each ForestID separately from ranks, get the point count data, and calculate the number of point counts within a particular ForestID, along with relative sampling effort per ForestID. 
+
+```{r summarize-area-and-create-gap-analysis, echo=FALSE}
+totalpers.s.3.30.Good<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="G", ageclass=="Age 3-30 Y")%>%
+  summarize(G.3.30=sum(Shape_Area)/10000)
+totalpers.s.3.30.Medium<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="M", ageclass=="Age 3-30 Y")%>%
+  summarize(M.3.30=sum(Shape_Area)/10000)
+totalpers.s.3.30.Fair<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="F", ageclass=="Age 3-30 Y")%>%
+  summarize(F.3.30=sum(Shape_Area)/10000)
+totalpers.s.3.30.Unproductive<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="U", ageclass=="Age 3-30 Y")%>%
+  summarize(U.3.30=sum(Shape_Area)/10000)
+
+totalpers.s.31.60.Good<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="G", ageclass=="Age 31-60 Y")%>%
+  summarize(G.31.60=sum(Shape_Area)/10000)
+totalpers.s.31.60.Medium<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="M", ageclass=="Age 31-60 Y")%>%
+  summarize(M.31.60=sum(Shape_Area)/10000)
+totalpers.s.31.60.Fair<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="F", ageclass=="Age 31-60 Y")%>%
+  summarize(F.31.60=sum(Shape_Area)/10000)
+totalpers.s.31.60.Unproductive<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="U", ageclass=="Age 31-60 Y")%>%
+  summarize(U.31.60=sum(Shape_Area)/10000)
+
+totalpers.s.61.80.Good<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="G", ageclass=="Age 61-80 Y")%>%
+  summarize(G.61.80=sum(Shape_Area)/10000)
+totalpers.s.61.80.Medium<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="M", ageclass=="Age 61-80 Y")%>%
+  summarize(M.61.80=sum(Shape_Area)/10000)
+totalpers.s.61.80.Fair<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="F", ageclass=="Age 61-80 Y")%>%
+  summarize(F.61.80=sum(Shape_Area)/10000)
+totalpers.s.61.80.Unproductive<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="U", ageclass=="Age 61-80 Y")%>%
+  summarize(U.61.80=sum(Shape_Area)/10000)
+
+totalpers.s.81.100.Good<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="G", ageclass=="Age 81-100 Y")%>%
+  summarize(G.81.100=sum(Shape_Area)/10000)
+totalpers.s.81.100.Medium<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="M", ageclass=="Age 81-100 Y")%>%
+  summarize(M.81.100=sum(Shape_Area)/10000)
+totalpers.s.81.100.Fair<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="F", ageclass=="Age 81-100 Y")%>%
+  summarize(F.81.100=sum(Shape_Area)/10000)
+totalpers.s.81.100.Unproductive<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="U", ageclass=="Age 81-100 Y")%>%
+  summarize(U.81.100=sum(Shape_Area)/10000)
+
+totalpers.s.101.140.Good<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="G", ageclass=="Age 101-140 Y")%>%
+  summarize(G.101.140=sum(Shape_Area)/10000)
+totalpers.s.101.140.Medium<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="M", ageclass=="Age 101-140 Y")%>%
+  summarize(M.101.140=sum(Shape_Area)/10000)
+totalpers.s.101.140.Fair<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="F", ageclass=="Age 101-140 Y")%>%
+  summarize(F.101.140=sum(Shape_Area)/10000)
+totalpers.s.101.140.Unproductive<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="U", ageclass=="Age 101-140 Y")%>%
+  summarize(U.101.140=sum(Shape_Area)/10000)#differing number of rows in each tibble, so do a merge
+
+totalpers.s.141up.Good<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="G", ageclass=="Age 141+")%>%
+  summarize(G.141up=sum(Shape_Area)/10000)
+totalpers.s.141up.Medium<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="M", ageclass=="Age 141+")%>%
+  summarize(M.141up=sum(Shape_Area)/10000)
+totalpers.s.141up.Fair<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="F", ageclass=="Age 141+")%>%
+  summarize(F.141up=sum(Shape_Area)/10000)
+totalpers.s.141up.Unproductive<-ariskmatrixAVI.A%>%
+  group_by(subregion.name,standtype.name)%>%
+  filter(tpr.name=="U", ageclass=="Age 141+")%>%
+  summarize(U.141up=sum(Shape_Area)/10000)#differing number of rows in each tibble, so do a merge
+
+merged1a<-merge(totalpers.s.3.30.Good, totalpers.s.3.30.Medium, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1b<-merge(merged1a, totalpers.s.3.30.Fair, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1c<-merge(merged1b, totalpers.s.3.30.Unproductive, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1d<-merge(merged1c, totalpers.s.31.60.Good, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1e<-merge(merged1d, totalpers.s.31.60.Medium, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1f<-merge(merged1e, totalpers.s.31.60.Fair, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1g<-merge(merged1f, totalpers.s.31.60.Unproductive, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1h<-merge(merged1g, totalpers.s.61.80.Good, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1i<-merge(merged1h, totalpers.s.61.80.Medium, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1j<-merge(merged1i, totalpers.s.61.80.Fair, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1k<-merge(merged1j, totalpers.s.61.80.Unproductive, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1l<-merge(merged1k, totalpers.s.81.100.Good, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1m<-merge(merged1l, totalpers.s.81.100.Medium, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1n<-merge(merged1m, totalpers.s.81.100.Fair, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1o<-merge(merged1n, totalpers.s.81.100.Unproductive, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1p<-merge(merged1o, totalpers.s.101.140.Good, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1q<-merge(merged1p, totalpers.s.101.140.Medium, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1r<-merge(merged1q, totalpers.s.101.140.Fair, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1s<-merge(merged1r, totalpers.s.101.140.Unproductive, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1t<-merge(merged1s, totalpers.s.141up.Good, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1u<-merge(merged1t, totalpers.s.141up.Medium, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1v<-merge(merged1u, totalpers.s.141up.Fair, by=c("subregion.name", "standtype.name"), all=TRUE)
+merged1w<-merge(merged1v, totalpers.s.141up.Unproductive, by=c("subregion.name", "standtype.name"), all=TRUE)
+
+merged1w$G.3.30[is.na(merged1w$G.3.30)]<-0 #replace NAs
+merged1w$M.3.30[is.na(merged1w$M.3.30)]<-0 #replace NAs
+merged1w$F.3.30[is.na(merged1w$F.3.30)]<-0 #replace NAs
+merged1w$U.3.30[is.na(merged1w$U.3.30)]<-0 #replace NAs
+merged1w$G.31.60[is.na(merged1w$G.31.60)]<-0 #replace NAs
+merged1w$M.31.60[is.na(merged1w$M.31.60)]<-0 #replace NAs
+merged1w$F.31.60[is.na(merged1w$F.31.60)]<-0 #replace NAs
+merged1w$U.31.60[is.na(merged1w$U.31.60)]<-0 #replace NAs
+merged1w$G.61.80[is.na(merged1w$G.61.80)]<-0 #replace NAs
+merged1w$M.61.80[is.na(merged1w$M.61.80)]<-0 #replace NAs
+merged1w$F.61.80[is.na(merged1w$F.61.80)]<-0 #replace NAs
+merged1w$U.61.80[is.na(merged1w$U.61.80)]<-0 #replace NAs
+merged1w$G.81.100[is.na(merged1w$G.81.100)]<-0 #replace NAs
+merged1w$M.81.100[is.na(merged1w$M.81.100)]<-0 #replace NAs
+merged1w$F.81.100[is.na(merged1w$F.81.100)]<-0 #replace NAs
+merged1w$U.81.100[is.na(merged1w$U.81.100)]<-0 #replace NAs
+merged1w$G.101.140[is.na(merged1w$G.101.140)]<-0 #replace NAs
+merged1w$M.101.140[is.na(merged1w$M.101.140)]<-0 #replace NAs
+merged1w$F.101.140[is.na(merged1w$F.101.140)]<-0 #replace NAs
+merged1w$U.101.140[is.na(merged1w$U.101.140)]<-0 #replace NAs
+merged1w$G.141up[is.na(merged1w$G.141up)]<-0 #replace NAs
+merged1w$M.141up[is.na(merged1w$M.141up)]<-0 #replace NAs
+merged1w$F.141up[is.na(merged1w$F.141up)]<-0 #replace NAs
+merged1w$U.141up[is.na(merged1w$U.141up)]<-0 #replace NAs
+write.csv(merged1w, file="Output/totalarea.persubregion.stand.age.tpr.csv")
+```
+
+This data is currently in wide format.
+
+I manually converted it to long format in *areabyForestID* prior to adding bird data back in the May and July versions of the gap analysis.
+
+Now add the bird data. For subregions other than CentralMixedwood (which was missing polygons in the combined R data frames back in May), total point counts per combination of subregion, stand, age class, and TPR are the same as those summed back in May.
+
+At this point Area.1000 (area in 1000-ha units) and survey effort can be calculated. 
+
+## Step 4. Creating the Alberta Master Matrix
+
+The mastermatrix will be saved to an RData file and cleaned up prior to using it to analyze patterns in the ranks per ForestID and densities of birds per ForestID
+
+
+```{r add-bird-data, echo=FALSE}
+#Recast by ForestID
+pointcountsformatrix<-read.csv("rawData/pointsCdatacheckMay23.csv", header=TRUE)
+pointcountsformatrix$ForestID<-paste0(pointcountsformatrix$subregion.name,".",pointcountsformatrix$standtype.name,".",pointcountsformatrix$ageclass,".",pointcountsformatrix$tpr.name)
+pointsbyForestID<-tapply(pointcountsformatrix$counter, pointcountsformatrix$ForestID, sum)
+write.csv(pointsbyForestID, file = "Output/pointsbyForestID.csv")
+#Used Data to Columns in Excel to split ForestID back into separate columns.
+#matched up column categories from separate files in Excel, using the values in "pointsbyForestID"
+
+pointsbyForestID<-read.csv("A.dataQualityChecking/pointsbyForestID.csv", header=TRUE)
+pointsbyForestID$ForestID<-pointsbyForestID$X
+pointsbyForestID$X<-NULL
+pointsbyForestID$Count<-pointsbyForestID$x
+pointsbyForestID$x<-NULL
+areabyForestID<-read.csv("A.dataQualityChecking/areabyForestID.csv", header=TRUE)
+AlbertaMastermatrix<-merge(pointsbyForestID, areabyForestID, by=c("ForestID"), all=TRUE)
+AlbertaMastermatrix$Area.1000units<-AlbertaMastermatrix$Area/1000
+AlbertaMastermatrix$SurveyEffort<-AlbertaMastermatrix$Count/AlbertaMastermatrix$Area.1000units
+AlbertaMastermatrix$Count[is.na(AlbertaMastermatrix$Count)]<-0
+AlbertaMastermatrix$SurveyEffort[is.na(AlbertaMastermatrix$SurveyEffort)]<-0
+write.csv(AlbertaMastermatrix, file="Output/AlbertaMastermatrix.csv")
+save(AlbertaMastermatrix, file="RDataFiles/AlbertaMastermatrix.RData")
+```
