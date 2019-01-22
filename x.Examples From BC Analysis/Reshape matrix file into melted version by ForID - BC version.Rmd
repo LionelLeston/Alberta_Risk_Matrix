@@ -1,0 +1,64 @@
+
+Before loading the matrix scores into R, you need to do some reformatting. The two factors making up the columns need to be combined into a single factor (e.g., Age.TPR).
+
+Then Load into R. 
+``` {r}
+getwd()
+```
+
+``` {r, eval=T}
+## RANK
+cofi <- read.csv("area_summary_with_matrix-RANK-zSpGroup.csv")
+colnames(cofi)[which(colnames(cofi) == "code_use")] <- "SpeciesGroup" #this fixes a species naming code problem; you can ignore for Alberta
+cofi <- cofi[-which(colnames(cofi)=="code_orig")] #this fixes a species naming code problem; you can ignore for Alberta
+```
+
+
+Melt the dataset into long format. 
+``` {r, eval=T}
+require(reshape)
+ranks <- melt(cofi)
+head(ranks)
+```
+
+Split up "variable" (age, height) names into two separate columns
+``` {r, eval=T}
+con <- textConnection(as.character(ranks$variable))
+htage <- read.table(con, sep=".") #separates a column into two columsn based on a separator character
+head(htage)
+```
+
+``` {r, eval=T}
+colnames(htage) <- c("ForAge", "ForHt")
+htage$variable <- ranks$variable
+htage$ForAge <- as.character(htage$ForAge)
+head(htage)
+```
+
+``` {r, eval=T}
+htage$ForAge <- do.call(c, lapply(strsplit(htage$ForAge, "X"), function(x) x[2])) #removes the "X" from the Forest Age levels
+```
+
+``` {r, eval=T}
+ranks1 <- merge(ranks, htage, by="variable", all.y=T) # pulls height and age columns back into main table
+head(ranks1)
+```
+
+``` {r, eval=T}
+ranks1 <- ranks1[!duplicated(ranks1),]
+ranks1$ForHt[ranks1$ForHt=="4"] <- "4+"
+colnames(ranks1)[which(colnames(ranks1)=="value")] <- "Rank"
+```
+
+CREATE FOREST ID
+``` {r, eval=T}
+ranks1$ForID <- with(ranks1, paste(BEC, SpeciesGroup, ForAge, ForHt, sep="."))
+ranks <- ranks1[c("ForID", "Rank")]
+``` 
+
+Write Table
+``` {r, eval=T}
+write.table(ranks, "area_summary_with_matrix-RANK-melt.csv", row.names=F, col.names=T, sep=",")
+head(ranks, 15)
+hist(ranks$Rank)
+```
