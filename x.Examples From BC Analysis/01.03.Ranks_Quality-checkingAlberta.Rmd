@@ -1,0 +1,294 @@
+---
+title: "Quality-checking Ranks from Forsite's GIS tool to the Excel Format Matrix provided by Lisa Takats-Priestley"
+author: "Nicole Barker and Lionel Leston"
+date: "January 13, 2019"
+output: 
+  word_document:
+    reference_docx: ../styles/ReportFormat_1.docx
+---
+
+### Goal: Compare Ranks extracted from Forsite's VRI-based shapefile and those from the two different matrix files (one from Forsite, one from Kari). 
+
+After noting that a large number of ForestIDs remained unranked in the Alberta FORSITE matrix even after removed IDs from unidentified subregions and stand types, we decided to quality check the ranks as well. 
+
+
+## Questions
+
+* Do the same forest stand types receive the same rank in all cases within a file?
+* Are the ranks the same between files?
+* Which forest stand types cause problems? Is it a Forsite script problem that requires Forsite to modify scripts for the next round?
+
+``` {r setup, echo=F, message=F, warning=F}
+require(knitr)
+opts_knit$set(root.dir = '..')
+getwd()
+```
+
+``` {r usefulfunc, echo=F}
+source("Rfunctions/UsefulFunctions.R")
+```
+
+
+```{r startup, echo=F, message=FALSE, warning=FALSE}
+require(ProjectTemplate)
+rm(list=ls())
+load.project()
+```
+
+# 1. The Forsite ForestID shapefile with ranks
+
+
+``` {r forsite, echo=T}
+FORSITEmatrixLong<-read.csv("rawData/AlbertaForID_Ranks_final_long.csv", header=TRUE)
+
+```
+
+``` {r check.unique.ranks.forsite, echo=T}
+FORSITEmatrixranksbyForID <- aggregate(FORSITEmatrixLong$Rating, by=list(ForestID=FORSITEmatrixLong$ForestID), FUN=function(x) {unique(x)})
+FORSITEmatrixnumranksbyForID <- aggregate(FORSITEmatrixLong$Rating, by=list(ForestID=FORSITEmatrixLong$ForestID), FUN=function(x) {length(unique(x))})
+
+
+```
+
+ForID `r FORSITEmatrixnumranksbyForID[FORSITEmatrixnumranksbyForID$x == 2,]$ForestID` has two different ranks. All other ForIDs have only one rank. Each ForID therefore has one of the following ranks: `r paste(unique(FORSITEmatrixranksbyForID$x), collapse="; ")`
+
+The `r FORSITEmatrixnumranksbyForID[FORSITEmatrixnumranksbyForID$x == 2,]$ForestID` stand type receive ranks of 0 and 3 in the VRI shapefile produced by Forsite. 
+
+#2. Take Lisa's risk matrix and convert it to long format to merge with FORSITE ranks
+
+``` {r melt Lisa matrix and merge, echo=T}
+Lisamatrix<-read.csv("x.Examples From BC Analysis/LisaMatrix.csv", header=TRUE)
+str(Lisamatrix)
+
+#require(reshape)
+#ranks <- melt(Lisamatrix)
+#head(ranks)
+#didn't work
+
+library(tidyr)
+data_long <- gather(Lisamatrix, agetpr, LisaRank, "Age.3.30.Y.Good":"Age.141..Unproductive", factor_key=TRUE)
+data_long 
+```
+
+#### replace "0" ranks with "unranked"
+
+First, it was recently brought to my attention that MH should have some Sb stands in it. Upon closer examination (April 27, 2017) I noticed that stands with '0' in the VRI file should not necessarily be UNRANKED. In some cases, they do have information for all 4 attributes, and therefore should have an attribute. 
+
+Here I'm going to examine what's up with that. 
+
+``` {r, echo=T}
+vri.test <- vri.qs[vri.qs$Rank == "0",]
+unique(vri.test$BecZone)
+unique(vri.test$SpeciesGroup)
+unique(vri.test$Age)
+unique(vri.test$Height)
+nrow(vri.test)
+vri.test <- vri.test[!vri.test$BecZone %in% c("0"),]
+nrow(vri.test)
+vri.test <- vri.test[!vri.test$SpeciesGroup %in% c("0", "999"),]
+nrow(vri.test)
+vri.test <- vri.test[!vri.test$Age %in% c("0"),] # anything 1 or 2 or younger should not be ranked. 
+nrow(vri.test)
+unique(vri.test$Height)
+vri.test <- vri.test[!duplicated(vri.test$ForID),]
+rbind(head(vri.test), tail(vri.test))
+nrow(vri.test)
+vri.test <- vri.test[order(vri.test$ForID),]
+```
+
+Pull in area and then use that to filter
+
+``` {r}
+reps <- read.csv("data/Output/BirdSamplingStandTypes-cleaned.2017.04.04.csv", header=T)
+vri.test <- merge(vri.test, reps[c("ForID", "ForestArea", "TotalCountSS")], by="ForID", all.x=T)
+vri.test <- vri.test[order(vri.test$ForestArea, decreasing=T),]
+vri.50ha <- vri.test[vri.test$ForestArea > 50,]
+vri.50ha <- vri.50ha[!is.na(vri.50ha$ForID),]
+kable(vri.50ha, row.names=F)
+```
+
+### Notes
+
+* Sb_Mix and Sb_Decid: Kari didn't include in matrix because Sb not known to occur in MS. It does, but only at a total of 700 Ha. Decided not to add ranks for this stand type at this time. 
+
+* Include the above table in my final report. 
+
+
+
+``` {r echo=T}
+
+testset <- vri$Rank[vri$Rank == 0]
+
+vri$Rank[vri$Rank == 0] <- "unranked"
+```
+
+#### Aggregate by unique ForID
+``` {r check.unique.ranks, echo=T}
+vriranksbyForID <- aggregate(vri$Rank, by=list(ForID=vri$ForID), FUN=function(x) {unique(x)})
+```
+
+`r nrow(vriranksbyForID)` unique ForIDs, `r nrow(vriranksbyForID[vriranksbyForID$x %in% c(1:6, "0 or 3"),])` of which are ranked. 
+
+
+# 2. The matrix file: "area_summary_with_matrix.xlsx"
+
+Forest stand ranks, formatted into the 'matrix format'. Supplied by Forsite to Kari. Kari provided to me. 
+
+``` {r cleanmatrix1, echo=T}
+mat <- read.csv("data/COFI.Layer.TableExport/area_summary_with_matrix-RANK-melt.csv")
+```
+
+#### replace "0" ranks with "unranked"
+
+``` {r echo=T}
+mat$Rank <- as.character(mat$Rank)
+mat$Rank[mat$Rank == 0] <- "unranked"
+```
+
+``` {r check.unique.ranks.mat, echo=T}
+matranksbyForID <- aggregate(mat$Rank, by=list(ForID=mat$ForID), FUN=function(x) {unique(x)})
+matnumranksbyForID <- aggregate(mat$Rank, by=list(ForID=mat$ForID), FUN=function(x) {length(unique(x))})
+```
+
+`r nrow(matranksbyForID)` unique ForIDs, `r nrow(matranksbyForID[matranksbyForID$x %in% c(1:6),])` of which are ranked. 
+
+All stand ids have only `r unique(matnumranksbyForID$x)` rank, which makes sense given the structure of the matrix. 
+
+# 3. The "FINAL" matrix file: "Migratory_bird_ranking_matrix_V1.3_Apr15_2016 FINAL.xlsx"
+
+Kari's ranks in matrix format. A few formatting changes were made:
+
+* "." in original matrix were left blank (they import as NAs)
+* Matrix was reshaped into long format, so simply ForID and Rank are listed in 2 columns. 
+
+We know this rank doesn't have Pa ranked. But the values in this matrix should be the gold standard, aside from that. 
+
+``` {r cleanmatrix, echo=T}
+kmat <- read.csv("data/COFI.Layer.TableExport/Migratory_bird_ranking_matrix_V1.3_Apr15_2016 FINAL-dataformat-zSpGroup-melt.csv")
+```
+
+#### Reassign any stand types assigned a "NA" or 0 to "unranked"
+``` {r echo=T}
+kmat$Rank <- as.character(kmat$Rank)
+kmat$Rank[kmat$Rank == 0] <- "unranked"
+```
+
+``` {r check.unique.ranks.cmat, echo=T}
+kmatranksbyForID <- aggregate(kmat$Rank, by=list(ForID=kmat$ForID), FUN=function(x) {unique(x)})
+kmatnumranksbyForID <- aggregate(kmat$Rank, by=list(ForID=kmat$ForID), FUN=function(x) {length(unique(x))})
+```
+
+`r nrow(kmatranksbyForID)` unique ForIDs, `r nrow(kmatranksbyForID[kmatranksbyForID$x %in% c(1:6),])` of which are ranked. 
+
+All stand ids have only `r unique(kmatnumranksbyForID$x)` rank, which makes sense given the structure of the matrix. 
+
+# 4. Compare the three files
+
+#### Merge rank files by forest stand id. Convert all NA ranks to "unranked". Then compare the various ranks pair-wise. 
+
+``` {r }
+colnames(vriranksbyForID)[2] <- "VRI.Rank"
+colnames(matranksbyForID)[2] <- "ForsiteMatrix.Rank"
+colnames(kmatranksbyForID)[2] <- "KariMatrix.Rank"
+
+tmp <- merge(vriranksbyForID, matranksbyForID, by="ForID", all=T)
+tmp2 <- merge(tmp, kmatranksbyForID, by="ForID", all=T)
+tmp2 <- merge(tmp2, mastermatrix["ForID"], by="ForID", all.y=T)
+
+forarea <- read.csv("data/output/ForestAreaCalc-melt-2017.Jan.csv", header=T, sep=",")
+colnames(forarea)[2] <- "ForestArea"
+
+matcomp <- merge(tmp2, forarea, by="ForID", all=T)
+
+matcomp$ForsiteMatrix.Rank <- as.character((matcomp$ForsiteMatrix.Rank))
+matcomp$KariMatrix.Rank <- as.character((matcomp$KariMatrix.Rank))
+matcomp$VRI.Rank <- as.character((matcomp$VRI.Rank))
+
+matcomp$ForsiteMatrix.Rank[is.na(matcomp$ForsiteMatrix.Rank)] <- "unranked"
+matcomp$KariMatrix.Rank[is.na(matcomp$KariMatrix.Rank)] <- "unranked"
+matcomp$VRI.Rank[is.na(matcomp$VRI.Rank)] <- "unranked"
+
+matcomp$sameranks.VRI.ForsiteMat <- matcomp$VRI.Rank == matcomp$ForsiteMatrix.Rank
+matcomp$sameranks.VRI.KariMat <- matcomp$VRI.Rank == matcomp$KariMatrix.Rank
+matcomp$sameranks.twomatrix <- matcomp$ForsiteMatrix.Rank == matcomp$KariMatrix.Rank
+
+matcomp$Ranked <- "No"
+matcomp$Ranked[matcomp$ForID %in% mastermatrix$ForID] <- "Yes"
+
+write.table(matcomp, file="data/output/QC_Rank.csv", sep=",", row.names=F, col.names = T)
+```
+
+#### Subset for those ForIDs that have VRI data for the 4 relevant fields. i.e., those in the mastermatrix (full factorial combination of Bec, SpGroup, Age, Height)
+
+``` {r subset.to.actual.ForIds, echo=T}
+matcomp.mm <- matcomp[matcomp$Ranked == "Yes",]
+matcomp.mmNAs <- matcomp.mm[is.na(matcomp.mm$sameranks.VRI.ForsiteMat) | is.na(matcomp.mm$sameranks.VRI.ForsiteMat) | is.na(matcomp.mm$sameranks.twomatrix),]
+```
+
+**Conclusion:** `r nrow(matcomp.mmNAs)`  NAs left; all replaced by "unranked"
+
+`r kable(head(matcomp.mm), row.names=F)`
+
+# Next step: Compare ranks that aren't NA
+
+#### Subset for unmatched ForIDs
+
+``` {r}
+unmatched <- matcomp.mm[matcomp.mm$sameranks.VRI.ForsiteMat == "FALSE" | matcomp.mm$sameranks.VRI.KariMat == "FALSE" | matcomp.mm$sameranks.twomatrix == "FALSE",]
+```
+
+`r nrow(unmatched)` ForIDs show at least one mismatch in Rank among the 3 different files. 
+
+Let's assume that the matrix that Forsite sent Kari is bogus. Focus on comparing Kari's matrix and the shapefile, which is meant to represent the matrix, spatially.
+
+``` {r echo=T}
+matcomp <- matcomp.mm[c("ForID", "sameranks.VRI.KariMat", "VRI.Rank", "KariMatrix.Rank", "ForestArea")]
+unmatched <- matcomp[matcomp$sameranks.VRI.KariMat == "FALSE",]
+```
+
+`r kable(head(unmatched), row.names=F)`
+
+`r nrow(unmatched)` forest stands have different ranks in Kari's matrix vs. the shapefile. But let's subset for those with more than 50 ha area. 
+
+#### subset for stand types with sufficient forest area
+
+Manually adding the forest stand type that was originally ranked as 0 or 3 based on forest age in the VRI shapefile. 
+
+``` {r }
+matcomp.50ha <- matcomp[matcomp$ForestArea >= 50,]
+unmatched <- matcomp.50ha[matcomp.50ha$sameranks.VRI.KariMat == "FALSE",]
+
+```
+
+`r nrow(unmatched)` forest stands have different ranks in Kari's matrix vs. the shapefile. 
+
+`r kable(unmatched, row.names=F)`
+
+These are forest stand types that we know Kari's matrix didn't adequantely handle. 
+
+# Fixed ranks
+
+Combine the ranks from Kari's file with the extra ones from the VRI shapefile that aren't in Kari's file. 
+
+``` {r}
+colnames(kmat)[2] <- "KariRank"
+head(kmat)
+colnames(vri)[2] <- "VRIRank"
+head(vri)
+
+ranks <- merge(kmat, vri, by="ForID", all=T)
+ranks <- merge(ranks, mastermatrix["ForID"], by="ForID", all.y=T)
+ranks <- ranks[!duplicated(ranks),]
+ranks <- ranks[ranks$ForID %in% mastermatrix$ForID,]
+
+ranks$FinalRank <- NA
+ranks$FinalRank[is.na(ranks$KariRank) & is.na(ranks$VRIRank)] <- "Unranked"
+ranks$FinalRank[is.na(ranks$KariRank) & ranks$VRIRank == 0] <- "Unranked"
+ranks$FinalRank[!is.na(ranks$KariRank)] <- ranks$KariRank[!is.na(ranks$KariRank)]
+ranks$FinalRank[is.na(ranks$FinalRank)] <- ranks$VRIRank[is.na(ranks$FinalRank)]
+ranks$Differences <- ranks$KariRank == ranks$VRIRank
+ranks <- ranks[order(ranks$Differences, ranks$FinalRank, ranks$ForID),]
+
+write.table(ranks, file="data/Output/Ranks_final_long.csv", sep=",", row.names=F, col.names = T)
+
+```

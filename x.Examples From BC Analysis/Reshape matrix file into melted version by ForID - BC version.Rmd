@@ -8,7 +8,7 @@ getwd()
 
 ``` {r, eval=T}
 ## RANK
-cofi <- read.csv("area_summary_with_matrix-RANK-zSpGroup.csv")
+cofi <- read.csv("fromNB.csv")#file path name too long for my computer so I shortened "area_summary_with_matrix-RANK-zSpGroup.csv" to "fromNB"
 colnames(cofi)[which(colnames(cofi) == "code_use")] <- "SpeciesGroup" #this fixes a species naming code problem; you can ignore for Alberta
 cofi <- cofi[-which(colnames(cofi)=="code_orig")] #this fixes a species naming code problem; you can ignore for Alberta
 ```
@@ -52,8 +52,8 @@ colnames(ranks1)[which(colnames(ranks1)=="value")] <- "Rank"
 
 CREATE FOREST ID
 ``` {r, eval=T}
-ranks1$ForID <- with(ranks1, paste(BEC, SpeciesGroup, ForAge, ForHt, sep="."))
-ranks <- ranks1[c("ForID", "Rank")]
+ranks1$ForID <- with(ranks1, paste(BEC, code_use, ForAge, ForHt, sep="."))
+ranks <- ranks1[c("ForID", "Rank")]#Changed "SpeciesGroup" to "code_use"
 ``` 
 
 Write Table
