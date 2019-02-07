@@ -1,0 +1,208 @@
+---
+title: "A.01. Create Master Matrix"
+author: "Lionel Leston & Nicole Barker"
+date: "January 2019"
+output: html_document
+---
+```{r setup, echo=F, message=F, warning=F}
+require(knitr)
+opts_knit$set(root.dir = '..')
+knitr::opts_chunk$set(
+  fig.path = "figures/"
+)
+rm(list=ls()); gc()
+getwd()
+```
+
+``` {r usefulfunc, echo=F}
+source("Rfunctions/UsefulFunctions.R")
+```
+
+## Goal: Create the mastermatrix file and a subset of the Forsite AVI that has valid stand types only. 
+
+This document describes how to get the GIS data from the risk matrix provided by FORSITE.
+
+Polygons in the risk matrix tool are represented within different combinations of Natural Subregion, Stand Type, Age Class, and Timber Productivity Rating outlined in the risk matrix (v. 3) of incidental take by forestry operations, created by FORSITE for FRIAA (the Forestry Resource Inventory Association of Alberta). 
+
+The GIS data will be used to make the master matrix that is combined with point count data in R, for both exploring the data and to validate the risk matrix. The data have also been used to create a gap analysis to describe ForestID combinations that have little or no point count representation.  
+
+The most recent version of this analysis was run in September, and includes the creation of an AlbertaMastermatrix containing observations of cumulative area, subregion, stand, age-class, and timber productivity rating for each ForestID, and a separate list of risk matrix ranks for each ForestID. 
+
+## Background work done before it came to U of A
+
+* Creation of matrix and ranks of matrix stand classes identified in that matrix - see *"C:\Users\nbarker\Documents\repos\Alberta_Risk_Matrix\rawData\LisaMatrix.csv"*
+* Translation of that matrix into a spatial file - see *"C:\Users\nbarker\Documents\repos\Alberta_Risk_Matrix\Reading\ABMBRR_FinalReport_FINAL.pdf"*
+
+## Background work done by U of A folks before switching over to R
+
+The first part of creating the risk matrix is done in ArcGIS. 
+
+We received two geodatabases from Forsite. Please note there is a data sharing agreement associated with these geodatabases. They cannot be used for anything other than the matrix work, and they cannot be shared with other parties. 
+
+#### 1. mbca_avi.gdb
+
+``` {r}
+mbca_avi <- read.csv("rawData/AVI_1rowexport.csv", header=T)
+```
+
+Has 1 layer, AVI, that contains `r length(colnames(mbca_avi))` rows: `r paste(colnames(mbca_avi), sep=", ")`.
+Does not contain information about the derived matrix ranks. 
+Attribute table has 3,118,203 rows.
+
+
+#### 2. avi_analysis.gdb
+
+Has 5 layers. We used **AVI_Analysis_matrixV3**
+It has 6120960 records/polygons/rows in the attribute table. 
+
+##### Processing done in ArcMap
+
+*1. Calculate area*
+
+While this layer has a "Shape_Area" field, we don't know the origin of this field. So we calculated polygon areas ourselves, following [these directions](https://www.gislounge.com/calculating-polygon-area-in-arcmap/). 
+
+
+*2.Recalculate age of forest stand?*
+
+For some reason, I can't easily combine MOD1YR or ORIGINYR from the detailed AVI geodatabase, so the age-structure calculated here is as of 2017. Probably not an issue, just that the age structure as of 2017 is different from what would have been present when surveys were actually being done.
+
+*3. Other stuff?*
+
+We exported the attribute table to a CSV file for use in R.
+
+
+## Step 1. Load data into R
+
+Load single CSV file with all records exported from *AVI_Analysis_matrixV3* layer in the *avi_analysis.gdb*
+
+```{r load, echo=FALSE}
+ariskmatrixAVI.A <- read.csv("rawData/AVI_Analysis_matrixV3.csv", header=T, stringsAsFactors = F)
+nrow(ariskmatrixAVI.A)
+str(ariskmatrixAVI.A)
+```
+
+There are `r nrow(ariskmatrixAVI.A)` rows/observations in the data frame. This is the same number as the attribute table in ArcMap, so we conclude that all records from the the entire risk matrix AVI attribute table have been loaded into R.
+
+
+## Question to resolve: why are there twice as many polygons in the matrix AVI than in the basic AVI?
+
+Question to Jeremy Beal (Forsite) in Nov 2018: Nicole and I had a quick question about the risk matrix AVI created by FORSITE. It was accompanied by a second geodatabase which was a composite AVI (mbca_avi). The risk matrix AVI geodatabase has many more polygons in it. Based on the FORSITE report, it looks like additional polygons were created in/added to the composite AVI to account for very recent cutblocks and fires before adding the risk matrix. We're assuming that the larger number of polygons in the risk matrix geodatabase is due to these additional fire and cutblock polygons that were not in the composite AVI. Is that correct?
+
+Reply from Jeremy Beal in Nov 2018:  That’s correct, as part of updating the forest cover we updated for cutblocks and fires that were missing from the AVI layer. I believe this is detailed in the final report. Feel free to give me a call to discuss.
+
+
+## Step 2. Create age classes in R based on age since stand origin
+
+In the AVI file, age is continuous. However, the matrix required a categorical variable. Age classes were intended to be  meaningful for both foresters and  breeding birds.
+
+``` {r }
+sort(unique(ariskmatrixAVI.A$AGE_2017))
+```
+
+The below code snippet reclassifies the continuous AGE_2017 variable into a categorical variable based on age classes of the matrix. These were provided via email from Lisa Priestley on May 23 2018
+
+* Age 3 - 30 years	
+* Age 31 - 60 years	
+* Age 61 - 80 years	
+* Age 81 - 100 years	
+* Age 101 - 140	
+* Age >140
+
+*Age classes*
+
+An estimate of age breaks that correspond to yeild increases of 50 cubic metres per hectare
+Begins at 3 to eliminate bare ground (dealt with a BMP)
+Ends at 140 to encompass all old growth / over mature where crown closure orother structural variable will pick up difference in stand break-up
+
+Note that some rows have 9999 as the age value. This is likely an index for NA, so these need to be accounted for when reclassifying to a categorical. 
+
+
+```{r get-age-classes, echo=FALSE}
+ariskmatrixAVI.A$ageclass_manual<-{ifelse(ariskmatrixAVI.A$AGE_2017==9999,"NA",
+                            ifelse(ariskmatrixAVI.A$AGE_2017 <3,"Age 0-2 Y",
+                              ifelse(ariskmatrixAVI.A$AGE_2017 <31,"Age 3-30 Y",
+                                ifelse(ariskmatrixAVI.A$AGE_2017 <61,"Age 31-60 Y",                                
+                                  ifelse(ariskmatrixAVI.A$AGE_2017 <81,"Age 61-80 Y",
+                                    ifelse(ariskmatrixAVI.A$AGE_2017 <101,"Age 81-100 Y",
+                                      ifelse(ariskmatrixAVI.A$AGE_2017 <141,"Age 101-140 Y","Age 141+")))))))
+}
+```
+
+## Step 4. Create master matrix and filter out invalid forest stand types. 
+
+### Create ForestID in the AVI file
+
+ForestID is created by concatenating the subregion name, stand name, age class, and timber productivity rating. Note that some polygons assigned to the same ForestID may be assigned different ranks with some ranked from 1 to 6 and others ranked as 0, NA, or 999.
+
+``` {r create.new.columns.createForID}
+ariskmatrixAVI.A$subregion.name<-ariskmatrixAVI.A$NaturalSubRegion
+ariskmatrixAVI.A$standtype.name<-ariskmatrixAVI.A$StandType
+ariskmatrixAVI.A$tpr.name<-ariskmatrixAVI.A$TPR
+
+#Create ForID
+ariskmatrixAVI.A$ForestID<-paste0(ariskmatrixAVI.A$subregion.name,".",ariskmatrixAVI.A$standtype.name,".",ariskmatrixAVI.A$ageclass,".",ariskmatrixAVI.A$tpr.name)
+```
+
+There are `r length(unique(ariskmatrixAVI.A$ForestID))` unique forest IDs in the AVI attribute table. 
+
+Note that some ForIDs have 0 for Natural Sugregion, or other odd values. These stands are missing attribute information for at least one of the four attributes, and are therefore excluded from the analysis. 
+
+Here we remove those by creating "Master Matrix", the factorial combination of all valid levels of all attribute factors. Then we subset the AVI attribute table for only the valid ForestIDs
+
+### Create MasterMatrix
+
+*Note that 0-2 year old stands are removed because the risk matrix started at year 3*
+
+``` {r}
+unique(ariskmatrixAVI.A$subregion.name)
+(subregion.levels <- factor(unique(ariskmatrixAVI.A$subregion.name)[2:length(unique(ariskmatrixAVI.A$subregion.name))]))
+
+unique(ariskmatrixAVI.A$standtype.name)
+(standtype.levels <- factor(unique(ariskmatrixAVI.A$standtype.name)[-which(unique(ariskmatrixAVI.A$standtype.name) == "0")]))
+
+unique(ariskmatrixAVI.A$tpr_name)
+tpr.levels <- factor(unique(ariskmatrixAVI.A$tpr.name)[-which(unique(ariskmatrixAVI.A$tpr.name) == "")])
+(tpr.levels <- factor(tpr.levels, levels=c("U", "F", "M", "G"), ordered=T))
+
+unique(ariskmatrixAVI.A$ageclass)
+ageclass.levels <- factor(unique(ariskmatrixAVI.A$ageclass_manual)[-which(unique(ariskmatrixAVI.A$ageclass_manual) %in% c("NA", "Age 0-2 Y"))])
+(ageclass.levels <- factor(ageclass.levels, levels=c("Age 3-30 Y","Age 31-60 Y","Age 61-80 Y","Age 81-100 Y","Age 101-140 Y","Age 141+"), ordered=T))
+```
+
+1. Valid subregion levels: `r levels(subregion.levels)`
+2. Valid stand type levels: `r levels(standtype.levels)`
+3. Valid tpr levels: `r levels(tpr.levels)`
+4. Valid Age class levels: `r levels(ageclass.levels)`
+
+Use expand.grid to create a data.frame with the factorial combination of all levels. This is all theoretically possible combinations of the stand attributes. 
+
+``` {r}
+mastermatrix.ForID <- as.data.frame(expand.grid(subregion.name=levels(subregion.levels), standtype.name=levels(standtype.levels), ageclass=levels(ageclass.levels), tpr.name=levels(tpr.levels)))
+
+mastermatrix.ForID$ForestID <- paste(mastermatrix.ForID$subregion.name, mastermatrix.ForID$standtype.name, mastermatrix.ForID$ageclass, mastermatrix.ForID$tpr.name, sep=".")
+
+kable(head(mastermatrix.ForID, 10))
+
+write.table(mastermatrix.ForID, "rawData/mastermatrix.ForID.csv", sep=",", row.names = F, col.names = T)
+```
+
+There are `r length(unique(mastermatrix.ForID$ForestID))` unique theoretically possible stand types. 
+
+Subset the AVI database to only those  ForestIDs that exist in the mastermatrix table
+
+``` {r remove.stands.with.missing.info}
+avi.clean <- subset(ariskmatrixAVI.A, subset=ariskmatrixAVI.A$ForestID %in% mastermatrix.ForID$ForestID)
+
+length(unique(avi.clean$ForestID)) # double check that we have the correct number of ForID. Will probably be less than the number of rows in the mastermatrix.forid file
+
+nrow(avi.clean)
+
+kable(head(avi.clean, 10))
+```
+
+Write avi.clean to a csv file so we don't need to re-clean it each time
+
+``` {r}
+write.table(avi.clean, "rawData/avi.validStandsOnly.csv", sep=",", row.names = F, col.names = T)
+```
+
