@@ -28,13 +28,6 @@ getwd()
 source("Rfunctions/UsefulFunctions.R")
 ```
 
-
-```{r startup, echo=F, message=FALSE, warning=FALSE}
-require(ProjectTemplate)
-rm(list=ls())
-load.project()
-```
-
 # 1. The Forsite ForestID shapefile with ranks
 
 

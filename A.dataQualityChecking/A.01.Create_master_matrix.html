@@ -125,7 +125,7 @@ $(document).ready(function () {
 
 <pre><code>##          used (Mb) gc trigger (Mb) max used (Mb)
 ## Ncells 478658 25.6     940480 50.3   750400 40.1
-## Vcells 859982  6.6    1650153 12.6  1097424  8.4</code></pre>
+## Vcells 859994  6.6    1650153 12.6  1097460  8.4</code></pre>
 <pre><code>## [1] &quot;C:/Users/nbarker/Documents/repos/Alberta_Risk_Matrix/A.dataQualityChecking&quot;</code></pre>
 <pre><code>## Loading required package: ggplot2</code></pre>
 <pre><code>## Loading required package: reshape2</code></pre>
@@ -141,9 +141,9 @@ $(document).ready(function () {
 <pre><code>## The following objects are masked from 'package:base':
 ## 
 ##     intersect, setdiff, setequal, union</code></pre>
-<div id="r-markdown" class="section level2">
-<h2>R Markdown</h2>
-<p>This document describes how to get the GIS data from the risk matrix provided by FORSITE and the point counts collated by the Boreal Avian Modelling Project (BAM) in Alberta.</p>
+<div id="goal-create-the-mastermatrix-file-and-a-subset-of-the-forsite-avi-that-has-valid-stand-types-only." class="section level2">
+<h2>Goal: Create the mastermatrix file and a subset of the Forsite AVI that has valid stand types only.</h2>
+<p>This document describes how to get the GIS data from the risk matrix provided by FORSITE.</p>
 <p>Polygons in the risk matrix tool are represented within different combinations of Natural Subregion, Stand Type, Age Class, and Timber Productivity Rating outlined in the risk matrix (v. 3) of incidental take by forestry operations, created by FORSITE for FRIAA (the Forestry Resource Inventory Association of Alberta).</p>
 <p>The GIS data will be used to make the master matrix that is combined with point count data in R, for both exploring the data and to validate the risk matrix. The data have also been used to create a gap analysis to describe ForestID combinations that have little or no point count representation.</p>
 <p>The most recent version of this analysis was run in September, and includes the creation of an AlbertaMastermatrix containing observations of cumulative area, subregion, stand, age-class, and timber productivity rating for each ForestID, and a separate list of risk matrix ranks for each ForestID.</p>
