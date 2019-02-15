@@ -52,23 +52,16 @@ Attribute table has 3,118,203 rows.
 
 #### 2. avi_analysis.gdb
 
-Has 5 layers. We used **AVI_Analysis_matrixV3**
+**AVI_Analysis_matrixV3**
 It has 6120960 records/polygons/rows in the attribute table. 
 
 ##### Processing done in ArcMap
 
-*1. Calculate area*
+*Calculate area*
 
 While this layer has a "Shape_Area" field, we don't know the origin of this field. So we calculated polygon areas ourselves, following [these directions](https://www.gislounge.com/calculating-polygon-area-in-arcmap/). 
 
-
-*2.Recalculate age of forest stand?*
-
-For some reason, I can't easily combine MOD1YR or ORIGINYR from the detailed AVI geodatabase, so the age-structure calculated here is as of 2017. Probably not an issue, just that the age structure as of 2017 is different from what would have been present when surveys were actually being done.
-
-*3. Other stuff?*
-
-We exported the attribute table to a CSV file for use in R.
+*We then exported the attribute table to a CSV file for use in R*
 
 
 ## Step 1. Load data into R
@@ -76,7 +69,7 @@ We exported the attribute table to a CSV file for use in R.
 Load single CSV file with all records exported from *AVI_Analysis_matrixV3* layer in the *avi_analysis.gdb*
 
 ```{r load, echo=FALSE}
-ariskmatrixAVI.A <- read.csv("rawData/AVI_Analysis_matrixV3.csv", header=T, stringsAsFactors = F)
+ariskmatrixAVI.A <- read.csv("rawData/GISfiles/avi_analysis_2018_2019.02_export.csv", header=T, stringsAsFactors = F)
 nrow(ariskmatrixAVI.A)
 str(ariskmatrixAVI.A)
 ```
@@ -160,7 +153,7 @@ unique(ariskmatrixAVI.A$subregion.name)
 unique(ariskmatrixAVI.A$standtype.name)
 (standtype.levels <- factor(unique(ariskmatrixAVI.A$standtype.name)[-which(unique(ariskmatrixAVI.A$standtype.name) == "0")]))
 
-unique(ariskmatrixAVI.A$tpr_name)
+unique(ariskmatrixAVI.A$tpr.name)
 tpr.levels <- factor(unique(ariskmatrixAVI.A$tpr.name)[-which(unique(ariskmatrixAVI.A$tpr.name) == "")])
 (tpr.levels <- factor(tpr.levels, levels=c("U", "F", "M", "G"), ordered=T))
 
